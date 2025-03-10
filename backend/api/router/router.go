@@ -2,6 +2,7 @@ package router
 
 import (
 	"notex/api/handler"
+	"notex/api/repository"
 	"notex/api/service"
 	"notex/config"
 	"notex/middleware"
@@ -128,6 +129,19 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 				tags.POST("", middleware.RequireEditor(), tagHandler.CreateTag)
 				tags.PUT("/:id", middleware.RequireEditor(), tagHandler.UpdateTag)
 				tags.DELETE("/:id", middleware.RequireEditor(), tagHandler.DeleteTag)
+			}
+
+			// 草稿相关路由（需要认证）
+			draftService := service.NewDraftService(repository.NewDraftRepository())
+			draftHandler := handler.NewDraftHandler(draftService)
+			drafts := authenticated.Group("/drafts")
+			{
+				drafts.GET("", draftHandler.ListDrafts)
+				drafts.GET("/:id", draftHandler.GetDraft)
+				drafts.POST("", middleware.RequireEditor(), draftHandler.CreateDraft)
+				drafts.PUT("/:id", middleware.RequireEditor(), draftHandler.UpdateDraft)
+				drafts.DELETE("/:id", middleware.RequireEditor(), draftHandler.DeleteDraft)
+				drafts.POST("/:id/publish", middleware.RequireEditor(), draftHandler.PublishDraft)
 			}
 
 			// 管理员路由

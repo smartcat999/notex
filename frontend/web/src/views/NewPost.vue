@@ -155,7 +155,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { 
@@ -165,8 +165,10 @@ import {
   createCategory,
   createTag 
 } from '@/api/posts'
+import { createDraft, getDraft, updateDraft, publishDraft } from '@/api/drafts'
 
 const router = useRouter()
+const route = useRoute()
 const formRef = ref(null)
 const categoryFormRef = ref(null)
 const tagFormRef = ref(null)
@@ -174,6 +176,7 @@ const categories = ref([])
 const tags = ref([])
 const categoryDialogVisible = ref(false)
 const tagDialogVisible = ref(false)
+const isEditMode = ref(false)
 
 // 文章表单数据
 const form = ref({
@@ -182,7 +185,6 @@ const form = ref({
   tag_ids: [],
   summary: '',
   content: '',
-  status: 'published'
 })
 
 // 分类表单数据
@@ -300,25 +302,81 @@ const handleCreateTag = async () => {
   }
 }
 
+// 生成 slug 的辅助函数
+const generateSlug = (title) => {
+  return title
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\u4e00-\u9fa5]+/g, '-') // 将非字母数字和中文字符替换为连字符
+    .replace(/^-+|-+$/g, '') // 移除首尾的连字符
+    .substring(0, 100) // 限制长度
+}
+
 // 发布文章
 const handleSubmit = async () => {
   if (!formRef.value) return
   
   try {
     await formRef.value.validate()
-    await createPost(form.value)
-    ElMessage.success('文章发布成功')
+    if (isEditMode.value) {
+      // 如果是编辑草稿模式，使用发布草稿接口
+      await publishDraft(route.query.draft_id)
+      ElMessage.success('草稿发布成功')
+    } else {
+      // 如果是新建文章模式，使用创建文章接口
+      const timestamp = new Date().getTime()
+      const slug = `${generateSlug(form.value.title)}-${timestamp}`
+      await createPost({
+        ...form.value,
+        status: 'published',
+        slug: slug
+      })
+      ElMessage.success('文章发布成功')
+    }
     router.push('/posts')
   } catch (error) {
-    console.error('Failed to create post:', error)
-    ElMessage.error('文章发布失败')
+    console.error('Failed to publish:', error)
+    ElMessage.error(isEditMode.value ? '草稿发布失败' : '文章发布失败')
+  }
+}
+
+// 加载草稿数据
+const loadDraft = async (draftId) => {
+  try {
+    const draft = await getDraft(draftId)
+    form.value = {
+      title: draft.title,
+      category_id: draft.category_id,
+      tag_ids: draft.tags.map(tag => tag.id),
+      summary: draft.summary,
+      content: draft.content,
+    }
+    isEditMode.value = true
+  } catch (error) {
+    console.error('Failed to load draft:', error)
+    ElMessage.error('加载草稿失败')
+    router.push('/drafts')
   }
 }
 
 // 保存草稿
 const handleSaveDraft = async () => {
-  form.value.status = 'draft'
-  await handleSubmit()
+  if (!formRef.value) return
+
+  try {
+    await formRef.value.validate()
+    if (isEditMode.value) {
+      await updateDraft(route.query.draft_id, form.value)
+      ElMessage.success('草稿更新成功')
+    } else {
+      await createDraft(form.value)
+      ElMessage.success('草稿保存成功')
+    }
+    router.push('/drafts')
+  } catch (error) {
+    console.error('Failed to save draft:', error)
+    ElMessage.error(isEditMode.value ? '草稿更新失败' : '草稿保存失败')
+  }
 }
 
 // 取消编辑
@@ -326,12 +384,17 @@ const handleCancel = () => {
   router.back()
 }
 
-// 在组件挂载时获取分类和标签数据
+// 在组件挂载时获取分类和标签数据，如果有草稿ID则加载草稿
 onMounted(async () => {
   await Promise.all([
     fetchCategories(),
     fetchTags()
   ])
+  
+  const draftId = route.query.draft_id
+  if (draftId) {
+    await loadDraft(draftId)
+  }
 })
 </script>
 

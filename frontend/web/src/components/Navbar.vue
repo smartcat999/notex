@@ -42,6 +42,10 @@
                 <el-icon><User /></el-icon>
                 个人中心
               </el-dropdown-item>
+              <el-dropdown-item @click="$router.push('/drafts')">
+                <el-icon><Document /></el-icon>
+                草稿箱
+              </el-dropdown-item>
               <el-dropdown-item @click="$router.push('/settings')">
                 <el-icon><Setting /></el-icon>
                 设置
