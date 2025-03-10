@@ -327,16 +327,20 @@ const handlePasswordSubmit = async () => {
     await passwordFormRef.value.validate()
     passwordLoading.value = true
     await changePassword({
-      current_password: passwordForm.value.currentPassword,
+      old_password: passwordForm.value.currentPassword,
       new_password: passwordForm.value.newPassword,
     })
+    // 清空表单
     passwordForm.value = {
       currentPassword: '',
       newPassword: '',
       confirmPassword: '',
     }
+    // 显示成功提示
+    ElMessage.success('密码修改成功')
   } catch (error) {
-    console.error('Failed to change password:', error)
+    // 显示错误提示
+    ElMessage.error(error.response?.data?.error || '密码修改失败')
   } finally {
     passwordLoading.value = false
   }
