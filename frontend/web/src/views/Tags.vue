@@ -107,10 +107,9 @@ const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 
-const tagTypes = ['', 'success', 'warning', 'danger', 'info']
-
 const getRandomTagType = () => {
-  return tagTypes[Math.floor(Math.random() * tagTypes.length)]
+  const types = ['primary', 'success', 'warning', 'danger', 'info']
+  return types[Math.floor(Math.random() * types.length)]
 }
 
 const fetchTags = async () => {

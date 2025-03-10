@@ -88,6 +88,7 @@
                     v-for="tag in post.tags"
                     :key="tag.id"
                     size="small"
+                    :type="getRandomTagType()"
                     effect="plain"
                   >
                     {{ tag.name }}
@@ -230,7 +231,7 @@ const fetchPopularTags = async () => {
 
 // 获取随机标签类型
 const getRandomTagType = () => {
-  const types = ['', 'success', 'warning', 'danger', 'info']
+  const types = ['primary', 'success', 'warning', 'danger', 'info']
   return types[Math.floor(Math.random() * types.length)]
 }
 
