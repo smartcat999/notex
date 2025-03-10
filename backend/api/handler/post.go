@@ -13,9 +13,9 @@ type PostHandler struct {
 	service *service.PostService
 }
 
-func NewPostHandler() *PostHandler {
+func NewPostHandler(postService *service.PostService) *PostHandler {
 	return &PostHandler{
-		service: service.NewPostService(),
+		service: postService,
 	}
 }
 

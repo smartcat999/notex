@@ -2,6 +2,7 @@ package router
 
 import (
 	"notex/api/handler"
+	"notex/api/service"
 	"notex/config"
 	"notex/middleware"
 
@@ -32,14 +33,22 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	// 静态文件服务
 	r.Static(cfg.FileStorage.URLPrefix, cfg.FileStorage.UploadDir)
 
+	adminService := service.NewAdminService()
+	authService := service.NewAuthService()
+	categoryService := service.NewCategoryService()
+	commentService := service.NewCommentService()
+	postService := service.NewPostService()
+	tagService := service.NewTagService()
+	verificationService := service.NewVerificationService()
+
 	// API路由组
 	api := r.Group("/api")
 	{
 		// 认证相关路由（无需认证）
 		auth := api.Group("/auth")
 		{
-			authHandler := handler.NewAuthHandler()
-			verificationHandler := handler.NewVerificationHandler()
+			authHandler := handler.NewAuthHandler(authService)
+			verificationHandler := handler.NewVerificationHandler(verificationService)
 
 			auth.POST("/register", middleware.LoginRateLimit(), authHandler.Register)
 			auth.POST("/login", middleware.LoginRateLimit(), authHandler.Login)
@@ -49,10 +58,10 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 		}
 
 		// 公开接口，无需认证
-		postHandler := handler.NewPostHandler()
-		commentHandler := handler.NewCommentHandler()
-		categoryHandler := handler.NewCategoryHandler()
-		tagHandler := handler.NewTagHandler()
+		postHandler := handler.NewPostHandler(postService)
+		commentHandler := handler.NewCommentHandler(commentService)
+		categoryHandler := handler.NewCategoryHandler(categoryService)
+		tagHandler := handler.NewTagHandler(tagService)
 
 		// 文章相关的公开接口
 		api.GET("/posts/public", postHandler.ListPublicPosts)
@@ -72,8 +81,8 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 		authenticated.Use(middleware.AuthMiddleware())
 		{
 			// 认证相关路由
-			authHandler := handler.NewAuthHandler()
-			verificationHandler := handler.NewVerificationHandler()
+			authHandler := handler.NewAuthHandler(authService)
+			verificationHandler := handler.NewVerificationHandler(verificationService)
 			authenticated.GET("/auth/profile", authHandler.GetProfile)
 			authenticated.PUT("/auth/profile", authHandler.UpdateProfile)
 			authenticated.POST("/auth/change-password", authHandler.ChangePassword)
@@ -122,7 +131,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 			}
 
 			// 管理员路由
-			adminHandler := handler.NewAdminHandler()
+			adminHandler := handler.NewAdminHandler(adminService)
 			adminHandler.RegisterRoutes(authenticated)
 		}
 	}

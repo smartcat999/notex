@@ -13,9 +13,9 @@ type CommentHandler struct {
 	service *service.CommentService
 }
 
-func NewCommentHandler() *CommentHandler {
+func NewCommentHandler(commentService *service.CommentService) *CommentHandler {
 	return &CommentHandler{
-		service: service.NewCommentService(),
+		service: commentService,
 	}
 }
 

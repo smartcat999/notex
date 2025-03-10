@@ -13,9 +13,9 @@ type CategoryHandler struct {
 	service *service.CategoryService
 }
 
-func NewCategoryHandler() *CategoryHandler {
+func NewCategoryHandler(categoryService *service.CategoryService) *CategoryHandler {
 	return &CategoryHandler{
-		service: service.NewCategoryService(),
+		service: categoryService,
 	}
 }
 

@@ -13,9 +13,9 @@ type VerificationHandler struct {
 	service *service.VerificationService
 }
 
-func NewVerificationHandler() *VerificationHandler {
+func NewVerificationHandler(verificationService *service.VerificationService) *VerificationHandler {
 	return &VerificationHandler{
-		service: service.NewVerificationService(),
+		service: verificationService,
 	}
 }
 
