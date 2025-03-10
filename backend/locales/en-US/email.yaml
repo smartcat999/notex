@@ -1,0 +1,40 @@
+common:
+  greeting: Dear User,
+  signature: Best regards,
+  team_name: Notex Team
+  auto_email: This is an automated email from Notex system, please do not reply directly.
+  copyright: "© %d Notex. All rights reserved."
+  expires_in: This verification code will expire in %d minutes.
+  security_warning: To protect your account security, please do not share the verification code with others.
+
+verification:
+  title: Email Verification
+  subject: Email Verification - Notex
+  message: Hello! You are verifying your email address. Your verification code is:
+  not_you: If you did not request this verification, please ignore this email.
+
+password_reset:
+  title: Password Reset
+  subject: Password Reset - Notex
+  message: Hello! You are resetting your password. Your reset code is:
+  security_tips: For your account security:
+  tips:
+    - Please do not share the verification code with others
+    - Notex staff will never ask for your verification code
+    - We recommend changing your password regularly
+  not_you: If you did not request this password reset, please ignore this email.
+
+email_change:
+  title: Email Change
+  subject: Email Change - Notex
+  message: Hello! You are changing your email to %s. Your verification code is:
+  consequences: After changing your email:
+  changes:
+    - You will need to use the new email to log in
+    - All system notifications will be sent to the new email
+    - The old email will no longer receive any notifications
+  security_action: If you did not request this email change, please immediately:
+  actions:
+    - Check your account security
+    - Change your account password
+    - Contact customer support 

@@ -1,0 +1,40 @@
+common:
+  greeting: 亲爱的用户，
+  signature: 此致
+  team_name: Notex 团队
+  auto_email: 这是一封来自 Notex 系统的自动邮件，请勿直接回复。
+  copyright: "© %d Notex. 保留所有权利。"
+  expires_in: 此验证码将在 %d 分钟后过期。
+  security_warning: 为了保护您的账户安全，请勿将验证码分享给他人。
+
+verification:
+  title: 邮箱验证
+  subject: 邮箱验证 - Notex
+  message: 您好！您正在验证您的邮箱地址。您的验证码是：
+  not_you: 如果您没有请求此验证，请忽略此邮件。
+
+password_reset:
+  title: 密码重置
+  subject: 密码重置 - Notex
+  message: 您好！您正在重置密码。您的重置码是：
+  security_tips: 为了您的账户安全：
+  tips:
+    - 请勿将验证码分享给他人
+    - Notex 工作人员绝不会向您索要验证码
+    - 我们建议您定期更改密码
+  not_you: 如果您没有请求重置密码，请忽略此邮件。
+
+email_change:
+  title: 邮箱变更
+  subject: 邮箱变更 - Notex
+  message: 您好！您正在将邮箱更改为 %s。您的验证码是：
+  consequences: 更改邮箱后：
+  changes:
+    - 您需要使用新邮箱登录
+    - 所有系统通知将发送至新邮箱
+    - 旧邮箱将不再收到任何通知
+  security_action: 如果您没有请求更改邮箱，请立即：
+  actions:
+    - 检查您的账户安全
+    - 更改您的账户密码
+    - 联系客服支持 

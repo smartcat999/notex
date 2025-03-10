@@ -1,0 +1,26 @@
+{{define "email_change"}}
+<p>{{call .T "common.greeting"}}</p>
+
+<p>{{printf (call .T "email_change.message") .NewEmail}}</p>
+
+<div class="code">{{.Code}}</div>
+
+<p>{{printf (call .T "common.expires_in") .ExpiresIn}}</p>
+
+<p>{{call .T "email_change.consequences"}}</p>
+<ul>
+    {{range $change := (call .T "email_change.changes")}}
+    <li>{{$change}}</li>
+    {{end}}
+</ul>
+
+<p>{{call .T "email_change.security_action"}}</p>
+<ul>
+    {{range $action := (call .T "email_change.actions")}}
+    <li>{{$action}}</li>
+    {{end}}
+</ul>
+
+<p>{{call .T "common.signature"}}<br>
+{{call .T "common.team_name"}}</p>
+{{end}} 

@@ -1,0 +1,16 @@
+{{define "verification"}}
+<p>{{call .T "common.greeting"}}</p>
+
+<p>{{call .T "verification.message"}}</p>
+
+<div class="code">{{.Code}}</div>
+
+<p>{{printf (call .T "common.expires_in") .ExpiresIn}}</p>
+
+<p>{{call .T "common.security_warning"}}</p>
+
+<p>{{call .T "verification.not_you"}}</p>
+
+<p>{{call .T "common.signature"}}<br>
+{{call .T "common.team_name"}}</p>
+{{end}} 

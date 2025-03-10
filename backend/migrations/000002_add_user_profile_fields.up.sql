@@ -1,0 +1,4 @@
+-- 添加用户个人资料字段
+ALTER TABLE users
+ADD COLUMN bio VARCHAR(500),
+ADD COLUMN avatar VARCHAR(255); 

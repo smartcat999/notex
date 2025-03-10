@@ -1,0 +1,111 @@
+# Notex 配置文件示例
+# 将此文件复制为 config.yaml 并根据需要修改配置
+
+# 服务器配置
+server:
+  # 服务器监听端口
+  port: 8080
+  # 服务器监听地址，使用 localhost 仅允许本地访问，使用 0.0.0.0 允许所有地址访问
+  host: localhost
+
+# 数据库配置
+database:
+  # 数据库主机地址
+  host: localhost
+  # 数据库端口
+  port: 5432
+  # 数据库用户名
+  user: postgres
+  # 数据库密码（建议使用环境变量 DB_PASSWORD 设置）
+  password: ""
+  # 数据库名称
+  dbname: notex
+
+# 邮件配置
+email:
+  # SMTP 服务器地址
+  host: smtp.gmail.com
+  # SMTP 服务器端口
+  port: 587
+  # SMTP 用户名（建议使用环境变量 EMAIL_USERNAME 设置）
+  username: your-email@gmail.com
+  # SMTP 密码（建议使用环境变量 EMAIL_PASSWORD 设置）
+  # 对于 Gmail，请使用应用专用密码：https://support.google.com/accounts/answer/185833
+  password: your-app-password
+  # 发件人邮箱
+  from_email: your-email@gmail.com
+  # 发件人名称
+  from_name: Notex System
+  # 是否使用 TLS
+  use_tls: true
+  # 邮件模板目录
+  templates_dir: templates/email
+  # 国际化资源目录
+  locales_dir: locales
+
+# JWT配置
+jwt:
+  # JWT 密钥（建议使用环境变量 JWT_SECRET_KEY 设置）
+  secret_key: your-secret-key
+  # 访问令牌有效期（小时）
+  access_token_expiry: 24
+  # 刷新令牌有效期（小时）
+  refresh_token_expiry: 168  # 7天
+
+# 限流配置
+rate_limit:
+  # IP限流配置
+  ip:
+    rate: 100    # 每秒请求数
+    burst: 200   # 令牌桶容量
+    ttl: 3600s   # 限流器生存时间
+  # API限流配置
+  api:
+    rate: 1000   # 每秒请求数
+    burst: 2000  # 令牌桶容量
+    ttl: 3600s   # 限流器生存时间
+  # 登录限流配置
+  login:
+    rate: 5      # 每秒请求数
+    burst: 10    # 令牌桶容量
+    ttl: 3600s   # 限流器生存时间
+
+# 文件存储配置
+file_storage:
+  # 上传目录
+  upload_dir: uploads
+  # 允许的文件类型
+  allowed_types:
+    - image/jpeg
+    - image/png
+    - image/gif
+    - image/webp
+  # 最大文件大小（字节）
+  max_size: 10485760  # 10MB
+  # 文件访问URL前缀
+  url_prefix: /uploads/
+  # 缩略图大小（像素）
+  thumbnail_size: 300
+
+# 环境变量支持：
+# 以下配置项可以通过环境变量覆盖：
+# - DB_HOST: 数据库主机地址
+# - DB_PORT: 数据库端口
+# - DB_USER: 数据库用户名
+# - DB_PASSWORD: 数据库密码
+# - DB_NAME: 数据库名称
+# - EMAIL_HOST: SMTP服务器地址
+# - EMAIL_PORT: SMTP服务器端口
+# - EMAIL_USERNAME: SMTP用户名
+# - EMAIL_PASSWORD: SMTP密码
+# - JWT_SECRET_KEY: JWT密钥
+# - RATE_LIMIT_IP_RATE: IP限流速率
+# - RATE_LIMIT_IP_BURST: IP限流突发容量
+# - RATE_LIMIT_API_RATE: API限流速率
+# - RATE_LIMIT_API_BURST: API限流突发容量
+# - RATE_LIMIT_LOGIN_RATE: 登录限流速率
+# - RATE_LIMIT_LOGIN_BURST: 登录限流突发容量
+# - FILE_UPLOAD_DIR: 文件上传目录
+# - FILE_MAX_SIZE: 最大文件大小
+# - FILE_URL_PREFIX: 文件访问URL前缀
+# - FILE_THUMBNAIL_SIZE: 缩略图大小 
