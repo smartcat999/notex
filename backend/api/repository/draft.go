@@ -17,54 +17,64 @@ var (
 )
 
 type DraftRepository struct {
-	db *gorm.DB
+	DB *gorm.DB
 }
 
 func NewDraftRepository() *DraftRepository {
 	return &DraftRepository{
-		db: database.GetDB(),
+		DB: database.GetDB(),
 	}
 }
 
 // Create 创建草稿
 func (r *DraftRepository) Create(draft *model.Draft) error {
-	return r.db.Create(draft).Error
+	return r.DB.Create(draft).Error
 }
 
 // Update 更新草稿
 func (r *DraftRepository) Update(draft *model.Draft) error {
-	return r.db.Save(draft).Error
+	return r.DB.Save(draft).Error
 }
 
 // Delete 删除草稿
-func (r *DraftRepository) Delete(id uint) error {
-	return r.db.Delete(&model.Draft{}, id).Error
+func (r *DraftRepository) Delete(draft *model.Draft) error {
+	return r.DB.Delete(draft).Error
 }
 
 // FindByID 根据ID查找草稿
 func (r *DraftRepository) FindByID(id uint) (*model.Draft, error) {
 	var draft model.Draft
-	err := r.db.Preload("Category").Preload("Tags").First(&draft, id).Error
+	err := r.DB.Preload("Category").Preload("Tags").First(&draft, id).Error
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, ErrDraftNotFound
-		}
 		return nil, err
 	}
 	return &draft, nil
 }
 
 // List 获取草稿列表
-func (r *DraftRepository) List(userID uint, page, pageSize int, search string) ([]model.Draft, int64, error) {
+func (r *DraftRepository) List(page, pageSize int, conditions map[string]interface{}) ([]model.Draft, int64, error) {
 	var drafts []model.Draft
 	var total int64
 
-	query := r.db.Model(&model.Draft{}).Where("user_id = ?", userID)
+	query := r.DB.Model(&model.Draft{})
 
-	if search != "" {
-		searchTerm := "%" + search + "%"
-		query = query.Where("LOWER(title) LIKE LOWER(?) OR LOWER(content) LIKE LOWER(?) OR LOWER(summary) LIKE LOWER(?)",
-			searchTerm, searchTerm, searchTerm)
+	// 应用查询条件
+	for key, value := range conditions {
+		if value != nil {
+			switch key {
+			case "user_id":
+				query = query.Where("user_id = ?", value)
+			case "search":
+				searchTerm := "%" + value.(string) + "%"
+				query = query.Where("LOWER(title) LIKE LOWER(?) OR LOWER(content) LIKE LOWER(?) OR LOWER(summary) LIKE LOWER(?)",
+					searchTerm, searchTerm, searchTerm)
+			case "category_id":
+				query = query.Where("category_id = ?", value)
+			case "tag_id":
+				query = query.Joins("JOIN draft_tags ON drafts.id = draft_tags.draft_id").
+					Where("draft_tags.tag_id = ?", value)
+			}
+		}
 	}
 
 	// 获取总数
@@ -76,7 +86,6 @@ func (r *DraftRepository) List(userID uint, page, pageSize int, search string) (
 	// 获取分页数据
 	err = query.Preload("Category").
 		Preload("Tags").
-		Order("updated_at DESC").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
 		Find(&drafts).Error
@@ -88,10 +97,17 @@ func (r *DraftRepository) List(userID uint, page, pageSize int, search string) (
 	return drafts, total, nil
 }
 
+// CountByUserID 获取用户的草稿数量
+func (r *DraftRepository) CountByUserID(userID uint) (int64, error) {
+	var count int64
+	err := r.DB.Model(&model.Draft{}).Where("user_id = ?", userID).Count(&count).Error
+	return count, err
+}
+
 // PublishDraft 发布草稿为文章
 func (r *DraftRepository) PublishDraft(draft *model.Draft) (*model.Post, error) {
 	// 开启事务
-	tx := r.db.Begin()
+	tx := r.DB.Begin()
 
 	// 生成唯一的 slug
 	timestamp := time.Now().UnixNano() / 1e6 // 转换为毫秒
@@ -135,7 +151,7 @@ func (r *DraftRepository) PublishDraft(draft *model.Draft) (*model.Post, error) 
 	}
 
 	// 重新加载文章以获取完整的关联数据
-	if err := r.db.Preload("Category").Preload("Tags").First(post, post.ID).Error; err != nil {
+	if err := r.DB.Preload("Category").Preload("Tags").First(post, post.ID).Error; err != nil {
 		return nil, err
 	}
 
@@ -171,7 +187,7 @@ func generateSlug(title string) string {
 // UpdateDraftTags 更新草稿的标签关联
 func (r *DraftRepository) UpdateDraftTags(draft *model.Draft, tagIDs []uint) error {
 	// 开启事务
-	tx := r.db.Begin()
+	tx := r.DB.Begin()
 
 	// 清除现有的标签关联
 	if err := tx.Model(draft).Association("Tags").Clear(); err != nil {

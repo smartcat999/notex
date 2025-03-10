@@ -36,7 +36,7 @@ func (h *DraftHandler) ListDrafts(c *gin.Context) {
 		return
 	}
 
-	drafts, total, err := h.draftService.ListDrafts(userID.(uint), query)
+	drafts, total, err := h.draftService.ListDrafts(userID.(uint), query.Page, query.PageSize, query.Search)
 	if err != nil {
 		response.Error(c, http.StatusInternalServerError, "获取草稿列表失败", err)
 		return

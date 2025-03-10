@@ -5,7 +5,6 @@ import (
 	"notex/api/dto"
 	"notex/api/repository"
 	"notex/model"
-	"time"
 )
 
 var (
@@ -24,16 +23,21 @@ func NewDraftService(draftRepo *repository.DraftRepository) *DraftService {
 }
 
 // ListDrafts 获取草稿列表
-func (s *DraftService) ListDrafts(userID uint, query dto.DraftListQuery) ([]dto.DraftResponse, int64, error) {
-	drafts, total, err := s.draftRepo.List(userID, query.Page, query.PageSize, query.Search)
+func (s *DraftService) ListDrafts(userID uint, page, pageSize int, search string) ([]dto.DraftResponse, int64, error) {
+	conditions := map[string]interface{}{
+		"user_id": userID,
+	}
+	if search != "" {
+		conditions["search"] = search
+	}
+
+	drafts, total, err := s.draftRepo.List(page, pageSize, conditions)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// 初始化一个空的响应数组
-	responses := make([]dto.DraftResponse, 0)
-
 	// 转换为响应格式
+	responses := make([]dto.DraftResponse, 0)
 	for _, draft := range drafts {
 		responses = append(responses, convertDraftToResponse(&draft))
 	}
@@ -140,7 +144,7 @@ func (s *DraftService) DeleteDraft(id, userID uint) error {
 		return ErrUnauthorized
 	}
 
-	return s.draftRepo.Delete(id)
+	return s.draftRepo.Delete(draft)
 }
 
 // PublishDraft 发布草稿
@@ -155,20 +159,8 @@ func (s *DraftService) PublishDraft(id, userID uint) (*model.Post, error) {
 		return nil, ErrUnauthorized
 	}
 
-	// 创建文章
-	post := &model.Post{
-		Title:       draft.Title,
-		Content:     draft.Content,
-		Summary:     draft.Summary,
-		CategoryID:  draft.CategoryID,
-		UserID:      draft.UserID,
-		Status:      "published",
-		Tags:        draft.Tags,
-		PublishedAt: time.Now(),
-	}
-
 	// 发布草稿
-	post, err = s.draftRepo.PublishDraft(draft)
+	post, err := s.draftRepo.PublishDraft(draft)
 	if err != nil {
 		return nil, err
 	}

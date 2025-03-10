@@ -8,34 +8,34 @@ import (
 )
 
 type PostRepository struct {
-	db *gorm.DB
+	DB *gorm.DB
 }
 
 func NewPostRepository() *PostRepository {
 	return &PostRepository{
-		db: database.GetDB(),
+		DB: database.GetDB(),
 	}
 }
 
 // Create 创建文章
 func (r *PostRepository) Create(post *model.Post) error {
-	return r.db.Create(post).Error
+	return r.DB.Create(post).Error
 }
 
 // Update 更新文章
 func (r *PostRepository) Update(post *model.Post) error {
-	return r.db.Save(post).Error
+	return r.DB.Save(post).Error
 }
 
 // Delete 删除文章
 func (r *PostRepository) Delete(id uint) error {
-	return r.db.Delete(&model.Post{}, id).Error
+	return r.DB.Delete(&model.Post{}, id).Error
 }
 
 // FindByID 根据ID查找文章
 func (r *PostRepository) FindByID(id uint) (*model.Post, error) {
 	var post model.Post
-	err := r.db.Preload("Category").Preload("Tags").First(&post, id).Error
+	err := r.DB.Preload("Category").Preload("Tags").First(&post, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func (r *PostRepository) List(page, pageSize int, conditions map[string]interfac
 	var posts []model.Post
 	var total int64
 
-	query := r.db.Model(&model.Post{})
+	query := r.DB.Model(&model.Post{})
 
 	// 应用查询条件
 	for key, value := range conditions {
@@ -104,27 +104,27 @@ func (r *PostRepository) List(page, pageSize int, conditions map[string]interfac
 // CountByUserID 获取用户的文章数量
 func (r *PostRepository) CountByUserID(userID uint) (int64, error) {
 	var count int64
-	err := r.db.Model(&model.Post{}).Where("user_id = ?", userID).Count(&count).Error
+	err := r.DB.Model(&model.Post{}).Where("user_id = ?", userID).Count(&count).Error
 	return count, err
 }
 
 // GetTotalViewsByUserID 获取用户的文章总浏览量
 func (r *PostRepository) GetTotalViewsByUserID(userID uint) (int64, error) {
 	var totalViews int64
-	err := r.db.Model(&model.Post{}).Where("user_id = ?", userID).Select("COALESCE(SUM(views), 0)").Scan(&totalViews).Error
+	err := r.DB.Model(&model.Post{}).Where("user_id = ?", userID).Select("COALESCE(SUM(views), 0)").Scan(&totalViews).Error
 	return totalViews, err
 }
 
 // GetCommentCount 获取文章的评论数量
 func (r *PostRepository) GetCommentCount(postID uint) (int64, error) {
 	var count int64
-	err := r.db.Model(&model.Comment{}).Where("post_id = ?", postID).Count(&count).Error
+	err := r.DB.Model(&model.Comment{}).Where("post_id = ?", postID).Count(&count).Error
 	return count, err
 }
 
 // IncrementViews 增加文章浏览量
 func (r *PostRepository) IncrementViews(postID uint) error {
-	return r.db.Model(&model.Post{}).Where("id = ?", postID).
+	return r.DB.Model(&model.Post{}).Where("id = ?", postID).
 		UpdateColumn("views", gorm.Expr("views + ?", 1)).Error
 }
 
@@ -133,7 +133,7 @@ func (r *PostRepository) GetArchives() ([]map[string]interface{}, error) {
 	var archives []map[string]interface{}
 
 	// 使用 PostgreSQL 的 to_char 函数按年月分组统计文章数量
-	err := r.db.Model(&model.Post{}).
+	err := r.DB.Model(&model.Post{}).
 		Select("to_char(published_at, 'YYYY-MM') as date, COUNT(*) as count").
 		Where("status = ? AND published_at IS NOT NULL", "published").
 		Group("to_char(published_at, 'YYYY-MM')").
@@ -151,7 +151,7 @@ func (r *PostRepository) GetArchives() ([]map[string]interface{}, error) {
 func (r *PostRepository) GetPostsByArchive(yearMonth string) ([]model.Post, error) {
 	var posts []model.Post
 
-	err := r.db.Model(&model.Post{}).
+	err := r.DB.Model(&model.Post{}).
 		Where("status = ? AND to_char(published_at, 'YYYY-MM') = ?", "published", yearMonth).
 		Preload("Category").
 		Preload("Tags").

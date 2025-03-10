@@ -20,6 +20,9 @@ func NewPostService() *PostService {
 
 // CreatePost 创建文章
 func (s *PostService) CreatePost(req *dto.CreatePostRequest) (*dto.PostResponse, error) {
+	// 开启事务
+	tx := s.repo.DB.Begin()
+
 	post := &model.Post{
 		Title:      req.Title,
 		Content:    req.Content,
@@ -34,7 +37,34 @@ func (s *PostService) CreatePost(req *dto.CreatePostRequest) (*dto.PostResponse,
 		post.PublishedAt = time.Now()
 	}
 
-	if err := s.repo.Create(post); err != nil {
+	// 创建文章
+	if err := tx.Create(post).Error; err != nil {
+		tx.Rollback()
+		return nil, err
+	}
+
+	// 如果有标签，添加标签关联
+	if len(req.TagIDs) > 0 {
+		// 查找所有标签
+		var tags []model.Tag
+		if err := tx.Where("id IN ?", req.TagIDs).Find(&tags).Error; err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+		// 添加标签关联
+		if err := tx.Model(post).Association("Tags").Replace(tags); err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+
+	// 提交事务
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
+
+	// 重新加载文章以获取完整的关联数据
+	if err := s.repo.DB.Preload("Category").Preload("Tags").First(post, post.ID).Error; err != nil {
 		return nil, err
 	}
 
