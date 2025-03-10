@@ -28,7 +28,7 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   response => {
     const res = response.data
-    console.log('response', res)
+    // console.log('response', res)
     
     // 对于草稿详情接口，直接返回数据
     if (response.config.url.match(/\/api\/drafts\/\d+$/) && response.config.method === 'get') {
