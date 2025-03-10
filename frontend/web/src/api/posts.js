@@ -201,10 +201,10 @@ export function getUserPosts(params) {
   })
 }
 
-// 获取用户的评论列表
+// 获取用户评论列表
 export function getUserComments(params) {
   return request({
-    url: '/comments/user',
+    url: '/users/comments',
     method: 'get',
     params
   })

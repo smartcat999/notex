@@ -70,3 +70,29 @@ func (r *CommentRepository) CountByUserID(userID uint) (int64, error) {
 	err := r.db.Model(&model.Comment{}).Where("user_id = ?", userID).Count(&count).Error
 	return count, err
 }
+
+// ListByUser 获取用户的评论列表
+func (r *CommentRepository) ListByUser(userID uint, page, pageSize int) ([]model.Comment, int64, error) {
+	var comments []model.Comment
+	var total int64
+
+	// 获取总数
+	if err := r.db.Model(&model.Comment{}).Where("user_id = ?", userID).Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// 获取评论列表，包括关联的文章信息
+	err := r.db.Model(&model.Comment{}).
+		Where("user_id = ?", userID).
+		Preload("Post").
+		Order("created_at DESC").
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
+		Find(&comments).Error
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return comments, total, nil
+}

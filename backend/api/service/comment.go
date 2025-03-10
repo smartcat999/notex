@@ -65,6 +65,32 @@ func (s *CommentService) ListComments(postID uint, query *dto.CommentListQuery) 
 	return responses, total, nil
 }
 
+// ListUserComments 获取用户的评论列表
+func (s *CommentService) ListUserComments(userID uint, page, pageSize int) ([]dto.CommentResponse, int64, error) {
+	comments, total, err := s.repo.ListByUser(userID, page, pageSize)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 转换为响应格式
+	responses := make([]dto.CommentResponse, len(comments))
+	for i, comment := range comments {
+		responses[i] = dto.CommentResponse{
+			ID:        comment.ID,
+			Content:   comment.Content,
+			PostID:    comment.PostID,
+			UserID:    comment.UserID,
+			CreatedAt: comment.CreatedAt,
+			UpdatedAt: comment.UpdatedAt,
+		}
+		if comment.Post != nil {
+			responses[i].PostTitle = comment.Post.Title
+		}
+	}
+
+	return responses, total, nil
+}
+
 // convertToResponse 将评论模型转换为响应DTO
 func (s *CommentService) convertToResponse(comment *model.Comment) (*dto.CommentResponse, error) {
 	if comment == nil {

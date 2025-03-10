@@ -92,6 +92,13 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 			authenticated.POST("/auth/email/send-verification", verificationHandler.SendEmailVerification)
 			authenticated.POST("/auth/email/verify", verificationHandler.VerifyEmail)
 
+			// 用户相关路由
+			users := authenticated.Group("/users")
+			{
+				// 用户评论相关路由
+				users.GET("/comments", commentHandler.ListUserComments)
+			}
+
 			// 文件上传相关路由
 			uploadHandler := handler.NewUploadHandler(&cfg.FileStorage)
 			upload := authenticated.Group("/upload")

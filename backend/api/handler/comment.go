@@ -90,3 +90,30 @@ func (h *CommentHandler) DeleteComment(c *gin.Context) {
 
 	c.JSON(http.StatusNoContent, nil)
 }
+
+// ListUserComments 获取用户的评论列表
+func (h *CommentHandler) ListUserComments(c *gin.Context) {
+	// 从上下文获取当前用户ID
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	// 获取分页参数
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
+
+	// 获取用户评论列表
+	comments, total, err := h.service.ListUserComments(userID.(uint), page, pageSize)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get user comments"})
+		return
+	}
+
+	// 返回评论列表和总数
+	c.JSON(http.StatusOK, gin.H{
+		"items": comments,
+		"total": total,
+	})
+}

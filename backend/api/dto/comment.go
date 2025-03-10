@@ -11,9 +11,10 @@ type CreateCommentRequest struct {
 type CommentResponse struct {
 	ID        uint      `json:"id"`
 	Content   string    `json:"content"`
+	PostID    uint      `json:"post_id"`
+	PostTitle string    `json:"post_title"`
 	UserID    uint      `json:"user_id"`
 	User      *UserInfo `json:"user,omitempty"`
-	PostID    uint      `json:"post_id"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
