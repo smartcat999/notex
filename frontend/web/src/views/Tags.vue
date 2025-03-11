@@ -64,13 +64,13 @@
                 {{ tag.name }}
               </el-tag>
             </div>
-            <el-button
-              type="primary"
-              link
-              @click="$router.push(`/posts/${post.id}`)"
+            <router-link
+              :to="`/posts/${post.id}`"
+              class="read-more"
             >
               阅读更多
-            </el-button>
+              <el-icon><ArrowRight /></el-icon>
+            </router-link>
           </div>
         </el-card>
       </div>
@@ -94,7 +94,7 @@
 <script setup>
 import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Calendar, View, ChatDotRound } from '@element-plus/icons-vue'
+import { Calendar, View, ChatDotRound, ArrowRight } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/date'
 import { getTags, getPosts } from '@/api/posts'
 
@@ -441,16 +441,29 @@ watch(
           }
         }
 
-        .el-button {
+        .read-more {
+          display: flex;
+          align-items: center;
+          gap: 4px;
           font-size: 0.85em;
-          background: rgba(43, 88, 118, 0.08);
-          padding: 4px 12px;
-          border-radius: 6px;
+          color: #2B5876;
+          text-decoration: none;
           transition: all 0.3s ease;
+          background: rgba(43, 88, 118, 0.08);
+          padding: 6px 14px;
+          border-radius: 6px;
+
+          .el-icon {
+            transition: transform 0.3s ease;
+          }
 
           &:hover {
             background: rgba(43, 88, 118, 0.12);
             transform: translateX(2px);
+
+            .el-icon {
+              transform: translateX(2px);
+            }
           }
         }
       }
