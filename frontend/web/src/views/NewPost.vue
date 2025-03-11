@@ -362,7 +362,8 @@ const handleSaveDraft = async () => {
       await updateDraft(route.query.draft_id, form.value)
       ElMessage.success('草稿更新成功')
     } else {
-      await createDraft(form.value)
+      const draft = await createDraft(form.value)
+      // 直接使用返回的草稿数据，不需要处理包装结构
       ElMessage.success('草稿保存成功')
     }
     router.push('/drafts')

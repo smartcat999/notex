@@ -86,23 +86,24 @@ func (h *DraftHandler) GetDraft(c *gin.Context) {
 func (h *DraftHandler) CreateDraft(c *gin.Context) {
 	var req dto.CreateDraftRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, http.StatusBadRequest, "参数错误", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "参数错误"})
 		return
 	}
 
 	userID, exists := c.Get("user_id")
 	if !exists {
-		response.Error(c, http.StatusUnauthorized, "未登录", nil)
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "未登录"})
 		return
 	}
 
 	draft, err := h.draftService.CreateDraft(userID.(uint), req)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, "创建草稿失败", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建草稿失败"})
 		return
 	}
 
-	response.Success(c, "创建草稿成功", draft)
+	// 直接返回草稿数据，不包装在 response 结构中
+	c.JSON(http.StatusOK, draft)
 }
 
 // UpdateDraft 更新草稿

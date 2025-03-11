@@ -65,6 +65,9 @@ func (s *DraftService) GetDraft(id, userID uint) (*model.Draft, error) {
 
 // CreateDraft 创建草稿
 func (s *DraftService) CreateDraft(userID uint, req dto.CreateDraftRequest) (*dto.DraftResponse, error) {
+	// 开启事务
+	tx := s.draftRepo.DB.Begin()
+
 	draft := &model.Draft{
 		Title:      req.Title,
 		Content:    req.Content,
@@ -73,14 +76,34 @@ func (s *DraftService) CreateDraft(userID uint, req dto.CreateDraftRequest) (*dt
 		UserID:     userID,
 	}
 
-	err := s.draftRepo.Create(draft)
-	if err != nil {
+	// 创建草稿
+	if err := tx.Create(draft).Error; err != nil {
+		tx.Rollback()
 		return nil, err
 	}
 
 	// 如果有标签，添加标签关联
 	if len(req.TagIDs) > 0 {
-		// TODO: 实现标签关联
+		var tags []model.Tag
+		if err := tx.Where("id IN ?", req.TagIDs).Find(&tags).Error; err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+		if err := tx.Model(draft).Association("Tags").Replace(tags); err != nil {
+			tx.Rollback()
+			return nil, err
+		}
+	}
+
+	// 提交事务
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
+
+	// 重新加载草稿以获取完整的关联数据
+	draft, err := s.draftRepo.FindByID(draft.ID)
+	if err != nil {
+		return nil, err
 	}
 
 	response := convertDraftToResponse(draft)
