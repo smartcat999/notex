@@ -8,13 +8,21 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import Navbar from '@/components/Navbar.vue'
 
 const route = useRoute()
 const userStore = useUserStore()
+
+// 在组件挂载时检查并加载用户信息
+onMounted(async () => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    await userStore.fetchUserProfile()
+  }
+})
 
 const shouldShowNavbar = computed(() => {
   return userStore.isAuthenticated && !isPublicRoute.value
