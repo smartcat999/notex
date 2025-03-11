@@ -6,6 +6,7 @@ import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
 import App from './App.vue'
 import router from './router'
 import './styles/main.scss'
+import 'highlight.js/styles/github-dark.css'
 
 const app = createApp(App)
 

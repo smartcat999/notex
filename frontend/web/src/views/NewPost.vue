@@ -68,15 +68,7 @@
         </el-form-item>
 
         <el-form-item label="内容" prop="content">
-          <div class="editor-container">
-            <!-- 这里后续可以集成 Markdown 编辑器 -->
-            <el-input
-              v-model="form.content"
-              type="textarea"
-              :rows="15"
-              placeholder="请输入文章内容"
-            />
-          </div>
+          <markdown-editor v-model="form.content" />
         </el-form-item>
 
         <el-form-item>
@@ -166,6 +158,7 @@ import {
   createTag 
 } from '@/api/posts'
 import { createDraft, getDraft, updateDraft, publishDraft } from '@/api/drafts'
+import MarkdownEditor from '@/components/MarkdownEditor.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -455,12 +448,6 @@ onMounted(async () => {
         flex: 0 0 auto;
         white-space: nowrap;
       }
-    }
-
-    .editor-container {
-      border: 1px solid var(--el-border-color);
-      border-radius: 4px;
-      padding: 16px;
     }
 
     .form-actions {
