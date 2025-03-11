@@ -313,8 +313,10 @@ const handleSubmit = async () => {
     loading.value = true
     await updateProfile(form.value)
     await userStore.fetchUserProfile()
+    ElMessage.success('个人信息更新成功')
   } catch (error) {
     console.error('Failed to update profile:', error)
+    ElMessage.error(error.response?.data?.error || '个人信息更新失败')
   } finally {
     loading.value = false
   }
