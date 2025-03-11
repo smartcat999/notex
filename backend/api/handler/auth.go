@@ -120,6 +120,7 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 	var input struct {
 		Username string `json:"username" binding:"required,min=3,max=20"`
 		Bio      string `json:"bio" binding:"max=500"`
+		Avatar   string `json:"avatar"`
 	}
 
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -148,6 +149,9 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 	// 更新用户信息
 	user.Username = input.Username
 	user.Bio = input.Bio
+	if input.Avatar != "" {
+		user.Avatar = input.Avatar
+	}
 
 	if err := h.service.UpdateUserProfile(user); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"message": "更新用户信息失败"})

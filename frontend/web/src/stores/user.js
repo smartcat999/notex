@@ -13,12 +13,7 @@ export const useUserStore = defineStore('user', () => {
     try {
       loading.value = true
       const response = await login(credentials)
-      if (response && response.data && response.data.token) {
-        token.value = response.data.token
-        localStorage.setItem('token', response.data.token)
-        await fetchUserProfile()
-        return response
-      } else if (response && response.token) {
+      if (response && response.token) {
         token.value = response.token
         localStorage.setItem('token', response.token)
         await fetchUserProfile()
@@ -58,8 +53,8 @@ export const useUserStore = defineStore('user', () => {
     try {
       loading.value = true
       const response = await getProfile()
-      if (response && response.data && response.data.user) {
-        user.value = response.data.user
+      if (response && response.user) {
+        user.value = response.user
       }
     } finally {
       loading.value = false

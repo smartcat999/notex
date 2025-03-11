@@ -89,9 +89,9 @@ const navItems = [
   { name: '标签', path: '/tags', icon: Collection }
 ]
 
-// 模拟用户数据，实际应该从状态管理或API获取
-const userAvatar = ref('')
-const userName = ref('用户')
+// 使用 computed 获取用户头像和用户名
+const userAvatar = computed(() => userStore.user?.avatar || '')
+const userName = computed(() => userStore.user?.username || '用户')
 
 const userInitials = computed(() => {
   return userName.value.charAt(0).toUpperCase()

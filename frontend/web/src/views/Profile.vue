@@ -5,9 +5,30 @@
       <el-col :xs="24" :md="8">
         <el-card class="profile-card">
           <div class="profile-header">
-            <el-avatar :size="100" :src="userStore.user?.avatar">
-              {{ userStore.user?.username?.charAt(0) }}
-            </el-avatar>
+            <div class="avatar-upload">
+              <el-upload
+                class="avatar-uploader"
+                :action="'/api/upload/file'"
+                :headers="headers"
+                :show-file-list="false"
+                :before-upload="beforeAvatarUpload"
+                :on-success="handleAvatarSuccess"
+                :on-error="handleAvatarError"
+                accept=".jpg,.jpeg,.png,.gif"
+              >
+                <el-avatar 
+                  :size="100" 
+                  :src="userStore.user?.avatar"
+                  class="avatar-image"
+                >
+                  {{ userStore.user?.username?.charAt(0) }}
+                </el-avatar>
+                <div class="avatar-hover-mask">
+                  <el-icon><Upload /></el-icon>
+                  <span>更换头像</span>
+                </div>
+              </el-upload>
+            </div>
             <h2>{{ userStore.user?.username }}</h2>
             <p class="email">{{ userStore.user?.email }}</p>
           </div>
@@ -214,7 +235,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import {
   User,
   Document,
@@ -222,6 +243,7 @@ import {
   Lock,
   Calendar,
   View,
+  Upload,
 } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/date'
 import { useUserStore } from '@/stores/user'
@@ -296,6 +318,60 @@ const commentTotal = ref(0)
 const commentPage = ref(1)
 const commentPageSize = ref(10)
 
+// 头像上传相关
+const headers = computed(() => ({
+  'Authorization': `Bearer ${userStore.token}`
+}))
+
+const beforeAvatarUpload = (file) => {
+  // 允许的文件类型
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif']
+  const isValidType = allowedTypes.includes(file.type)
+  const isLt2M = file.size / 1024 / 1024 < 2
+
+  if (!isValidType) {
+    ElMessage.error('只能上传 JPG、PNG 或 GIF 格式的图片！')
+    return false
+  }
+  if (!isLt2M) {
+    ElMessage.error('图片大小不能超过 2MB！')
+    return false
+  }
+  return true
+}
+
+const handleAvatarSuccess = async (response) => {
+  if (response && response.url) {
+    try {
+      // 构建更新请求数据
+      const updateData = {
+        username: form.value.username,
+        bio: form.value.bio,
+        avatar: response.url
+      }
+      
+      // 发送更新请求
+      await updateProfile(updateData)
+      // 更新 store 中的用户信息
+      userStore.setUser({
+        ...userStore.user,
+        avatar: response.url
+      })
+      ElMessage.success('头像更新成功')
+    } catch (error) {
+      console.error('Failed to update avatar:', error)
+      ElMessage.error('头像更新失败')
+    }
+  } else {
+    ElMessage.error('上传失败：无效的响应数据')
+  }
+}
+
+const handleAvatarError = (error) => {
+  console.error('Avatar upload error:', error)
+  ElMessage.error('头像上传失败，请重试')
+}
+
 const handleMenuSelect = (index) => {
   activeMenu.value = index
   if (index === 'posts') {
@@ -316,7 +392,7 @@ const handleSubmit = async () => {
     ElMessage.success('个人信息更新成功')
   } catch (error) {
     console.error('Failed to update profile:', error)
-    ElMessage.error(error.response?.data?.error || '个人信息更新失败')
+    ElMessage.error('个人信息更新失败')
   } finally {
     loading.value = false
   }
@@ -342,7 +418,7 @@ const handlePasswordSubmit = async () => {
     ElMessage.success('密码修改成功')
   } catch (error) {
     // 显示错误提示
-    ElMessage.error(error.response?.data?.error || '密码修改失败')
+    ElMessage.error('密码修改失败')
   } finally {
     passwordLoading.value = false
   }
@@ -408,6 +484,7 @@ const fetchUserProfile = async () => {
       form.value.bio = response.user.bio || ''
     }
   } catch (error) {
+    console.error('Failed to fetch user profile:', error)
     ElMessage.error('获取用户信息失败')
   }
 }
@@ -432,22 +509,50 @@ onMounted(() => {
     margin-bottom: 32px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
 
-    .avatar-wrapper {
-      margin-bottom: 20px;
+    .avatar-upload {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto;
+      cursor: pointer;
+      border-radius: 50%;
+      overflow: hidden;
 
-      .avatar {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        border: 4px solid rgba(255, 255, 255, 0.2);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      &:hover .avatar-hover-mask {
+        opacity: 1;
+      }
+
+      .avatar-image {
+        width: 100%;
+        height: 100%;
         transition: all 0.3s ease;
+      }
 
-        &:hover {
-          transform: scale(1.05);
-          border-color: rgba(255, 255, 255, 0.4);
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+      .avatar-hover-mask {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        color: white;
+        font-size: 0.9em;
+
+        .el-icon {
+          font-size: 24px;
+          margin-bottom: 4px;
         }
+      }
+
+      :deep(.el-upload) {
+        width: 100%;
+        height: 100%;
       }
     }
 
@@ -630,6 +735,54 @@ onMounted(() => {
     margin-bottom: 20px;
     padding: 24px 20px;
     background: linear-gradient(135deg, rgba(43, 88, 118, 0.05), rgba(78, 67, 118, 0.05));
+
+    .avatar-upload {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      margin: 0 auto;
+      cursor: pointer;
+      border-radius: 50%;
+      overflow: hidden;
+
+      &:hover .avatar-hover-mask {
+        opacity: 1;
+      }
+
+      .avatar-image {
+        width: 100%;
+        height: 100%;
+        transition: all 0.3s ease;
+      }
+
+      .avatar-hover-mask {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        color: white;
+        font-size: 0.9em;
+
+        .el-icon {
+          font-size: 24px;
+          margin-bottom: 4px;
+        }
+      }
+
+      :deep(.el-upload) {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+    }
 
     h2 {
       margin: 12px 0 4px;
