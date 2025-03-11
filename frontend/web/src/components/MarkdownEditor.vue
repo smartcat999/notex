@@ -217,11 +217,15 @@ watch(() => props.modelValue, (newValue) => {
       .editor-section,
       .preview-section {
         flex: 0 0 50%;
+        border: none;
+      }
+
+      .editor-section {
+        border-right: 1px solid #e2e8f0;
       }
     }
 
     .editor-section {
-      border-right: 1px solid #e2e8f0;
       background: #fafafa;
       position: relative;
 
@@ -237,6 +241,7 @@ watch(() => props.modelValue, (newValue) => {
         font-size: 12px;
         font-weight: 500;
         border-bottom: 1px solid #e2e8f0;
+        z-index: 1;
       }
 
       :deep(.el-textarea__inner) {
@@ -247,9 +252,10 @@ watch(() => props.modelValue, (newValue) => {
         font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', monospace;
         font-size: 14px;
         line-height: 1.6;
-        padding: 40px 16px 16px;
+        padding: 48px 16px 16px;
         color: #334155;
         background: #fafafa;
+        box-shadow: none;
         
         &:focus {
           box-shadow: none;
@@ -262,7 +268,7 @@ watch(() => props.modelValue, (newValue) => {
     }
 
     .preview-section {
-      padding: 40px 24px 24px;
+      padding: 48px 16px 16px;
       overflow-y: auto;
       background: #fff;
       position: relative;
@@ -274,11 +280,12 @@ watch(() => props.modelValue, (newValue) => {
         left: 0;
         right: 0;
         padding: 4px 16px;
-        background: #f8fafc;
+        background: #f1f5f9;
         color: #64748b;
         font-size: 12px;
         font-weight: 500;
         border-bottom: 1px solid #e2e8f0;
+        z-index: 1;
       }
 
       .markdown-preview {
@@ -289,31 +296,31 @@ watch(() => props.modelValue, (newValue) => {
 
         :deep(h1) {
           font-size: 2em;
-          margin: 1em 0 0.5em;
+          margin: 0.5em 0 0.5em;
           padding-bottom: 0.3em;
           border-bottom: 1px solid #e2e8f0;
         }
 
         :deep(h2) {
           font-size: 1.5em;
-          margin: 1em 0 0.5em;
+          margin: 0.5em 0 0.5em;
           padding-bottom: 0.3em;
           border-bottom: 1px solid #e2e8f0;
         }
 
         :deep(h3) {
           font-size: 1.25em;
-          margin: 1em 0 0.5em;
+          margin: 0.5em 0 0.5em;
         }
 
         :deep(p) {
-          margin: 1em 0;
+          margin: 0.5em 0 1em;
           line-height: 1.7;
         }
 
         :deep(ul), :deep(ol) {
           padding-left: 2em;
-          margin: 1em 0;
+          margin: 0.5em 0 1em;
         }
 
         :deep(li) {
@@ -321,7 +328,7 @@ watch(() => props.modelValue, (newValue) => {
         }
 
         :deep(blockquote) {
-          margin: 1em 0;
+          margin: 0 0 1em;
           padding: 0.5em 1em;
           color: #475569;
           border-left: 4px solid #e2e8f0;
@@ -330,7 +337,7 @@ watch(() => props.modelValue, (newValue) => {
         }
 
         :deep(pre) {
-          margin: 1em 0;
+          margin: 0 0 1em;
           padding: 1em;
           background: #1e293b;
           border-radius: 6px;

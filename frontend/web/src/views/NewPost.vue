@@ -9,7 +9,7 @@
     <div class="post-form">
       <el-form ref="formRef" :model="form" :rules="rules" label-position="top">
         <el-form-item label="标题" prop="title">
-          <el-input v-model="form.title" placeholder="请输入文章标题" />
+          <el-input v-model="form.title" placeholder="请输入文章标题" @input="handleFormChange" />
         </el-form-item>
 
         <el-form-item label="分类" prop="category_id">
@@ -19,6 +19,7 @@
               placeholder="请选择分类"
               class="category-input"
               value-key="id"
+              @change="handleFormChange"
             >
               <el-option
                 v-for="category in categories"
@@ -43,6 +44,7 @@
               class="tag-input"
               placeholder="请选择标签"
               value-key="id"
+              @change="handleFormChange"
             >
               <el-option
                 v-for="tag in tags"
@@ -59,7 +61,7 @@
         </el-form-item>
 
         <el-form-item label="封面图" prop="cover">
-          <file-upload v-model="form.cover" />
+          <file-upload v-model="form.cover" @update:modelValue="handleFormChange" />
         </el-form-item>
 
         <el-form-item label="摘要" prop="summary">
@@ -68,11 +70,12 @@
             type="textarea"
             :rows="3"
             placeholder="请输入文章摘要"
+            @input="handleFormChange"
           />
         </el-form-item>
 
         <el-form-item label="内容" prop="content">
-          <markdown-editor v-model="form.content" />
+          <markdown-editor v-model="form.content" @update:modelValue="handleFormChange" />
         </el-form-item>
 
         <el-form-item>
@@ -150,9 +153,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import { 
   getCategories, 
@@ -175,6 +178,8 @@ const tags = ref([])
 const categoryDialogVisible = ref(false)
 const tagDialogVisible = ref(false)
 const isEditMode = ref(false)
+const hasChanges = ref(false)
+const autoSaveTimer = ref(null)
 
 // 文章表单数据
 const form = ref({
@@ -212,6 +217,127 @@ const categoryRules = {
 // 标签表单验证规则
 const tagRules = {
   name: [{ required: true, message: '请输入标签名称', trigger: 'blur' }]
+}
+
+// 监听表单变化
+const handleFormChange = () => {
+  hasChanges.value = true
+  startAutoSave()
+}
+
+// 自动保存
+const startAutoSave = () => {
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value)
+  }
+  autoSaveTimer.value = setTimeout(async () => {
+    if (hasChanges.value) {
+      await handleSaveDraft()
+      hasChanges.value = false
+    }
+  }, 60000) // 每60秒自动保存一次
+}
+
+// 路由离开守卫
+const handleBeforeUnload = (e) => {
+  if (hasChanges.value) {
+    e.preventDefault()
+    e.returnValue = ''
+  }
+}
+
+// 注册路由守卫
+onBeforeUnmount(() => {
+  if (autoSaveTimer.value) {
+    clearTimeout(autoSaveTimer.value)
+  }
+  window.removeEventListener('beforeunload', handleBeforeUnload)
+})
+
+onMounted(() => {
+  window.addEventListener('beforeunload', handleBeforeUnload)
+  Promise.all([
+    fetchCategories(),
+    fetchTags()
+  ])
+  
+  const draftId = route.query.draft_id
+  if (draftId) {
+    loadDraft(draftId)
+  }
+})
+
+// 取消编辑
+const handleCancel = async () => {
+  if (hasChanges.value) {
+    try {
+      await ElMessageBox.confirm(
+        '是否将当前内容保存为草稿？',
+        '提示',
+        {
+          confirmButtonText: '保存草稿',
+          cancelButtonText: '放弃更改',
+          type: 'warning',
+        }
+      )
+      await handleSaveDraft()
+    } catch (error) {
+      if (error !== 'cancel') {
+        ElMessage.error('操作失败')
+        return
+      }
+    }
+  }
+  router.back()
+}
+
+// 保存草稿
+const handleSaveDraft = async () => {
+  if (!formRef.value) return
+
+  try {
+    await formRef.value.validate()
+    if (isEditMode.value) {
+      await updateDraft(route.query.draft_id, form.value)
+      ElMessage.success('草稿更新成功')
+    } else {
+      await createDraft(form.value)
+      ElMessage.success('草稿保存成功')
+    }
+    hasChanges.value = false
+    return true
+  } catch (error) {
+    console.error('Failed to save draft:', error)
+    ElMessage.error(isEditMode.value ? '草稿更新失败' : '草稿保存失败')
+    return false
+  }
+}
+
+// 发布文章
+const handleSubmit = async () => {
+  if (!formRef.value) return
+  
+  try {
+    await formRef.value.validate()
+    if (isEditMode.value) {
+      await publishDraft(route.query.draft_id)
+      ElMessage.success('草稿发布成功')
+    } else {
+      const timestamp = new Date().getTime()
+      const slug = `${generateSlug(form.value.title)}-${timestamp}`
+      await createPost({
+        ...form.value,
+        status: 'published',
+        slug: slug
+      })
+      ElMessage.success('文章发布成功')
+    }
+    hasChanges.value = false
+    router.push('/posts')
+  } catch (error) {
+    console.error('Failed to publish:', error)
+    ElMessage.error(isEditMode.value ? '草稿发布失败' : '文章发布失败')
+  }
 }
 
 // 获取分类列表
@@ -311,34 +437,6 @@ const generateSlug = (title) => {
     .substring(0, 100) // 限制长度
 }
 
-// 发布文章
-const handleSubmit = async () => {
-  if (!formRef.value) return
-  
-  try {
-    await formRef.value.validate()
-    if (isEditMode.value) {
-      // 如果是编辑草稿模式，使用发布草稿接口
-      await publishDraft(route.query.draft_id)
-      ElMessage.success('草稿发布成功')
-    } else {
-      // 如果是新建文章模式，使用创建文章接口
-      const timestamp = new Date().getTime()
-      const slug = `${generateSlug(form.value.title)}-${timestamp}`
-      await createPost({
-        ...form.value,
-        status: 'published',
-        slug: slug
-      })
-      ElMessage.success('文章发布成功')
-    }
-    router.push('/posts')
-  } catch (error) {
-    console.error('Failed to publish:', error)
-    ElMessage.error(isEditMode.value ? '草稿发布失败' : '文章发布失败')
-  }
-}
-
 // 加载草稿数据
 const loadDraft = async (draftId) => {
   try {
@@ -358,45 +456,6 @@ const loadDraft = async (draftId) => {
     router.push('/drafts')
   }
 }
-
-// 保存草稿
-const handleSaveDraft = async () => {
-  if (!formRef.value) return
-
-  try {
-    await formRef.value.validate()
-    if (isEditMode.value) {
-      await updateDraft(route.query.draft_id, form.value)
-      ElMessage.success('草稿更新成功')
-    } else {
-      const draft = await createDraft(form.value)
-      // 直接使用返回的草稿数据，不需要处理包装结构
-      ElMessage.success('草稿保存成功')
-    }
-    router.push('/drafts')
-  } catch (error) {
-    console.error('Failed to save draft:', error)
-    ElMessage.error(isEditMode.value ? '草稿更新失败' : '草稿保存失败')
-  }
-}
-
-// 取消编辑
-const handleCancel = () => {
-  router.back()
-}
-
-// 在组件挂载时获取分类和标签数据，如果有草稿ID则加载草稿
-onMounted(async () => {
-  await Promise.all([
-    fetchCategories(),
-    fetchTags()
-  ])
-  
-  const draftId = route.query.draft_id
-  if (draftId) {
-    await loadDraft(draftId)
-  }
-})
 </script>
 
 <style lang="scss" scoped>
