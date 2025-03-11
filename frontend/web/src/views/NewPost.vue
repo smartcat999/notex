@@ -28,7 +28,7 @@
                 :value="category.id"
               />
             </el-select>
-            <el-button type="primary" @click="showCreateCategory">
+            <el-button type="primary" plain size="default" @click="showCreateCategory">
               <el-icon><Plus /></el-icon>
               创建分类
             </el-button>
@@ -53,7 +53,7 @@
                 :value="tag.id"
               />
             </el-select>
-            <el-button type="primary" @click="showCreateTag">
+            <el-button type="primary" plain size="default" @click="showCreateTag">
               <el-icon><Plus /></el-icon>
               创建标签
             </el-button>
@@ -80,9 +80,9 @@
 
         <el-form-item>
           <div class="form-actions">
-            <el-button @click="handleCancel">取消</el-button>
+            <el-button plain @click="handleCancel">取消</el-button>
             <el-button type="primary" @click="handleSubmit">发布</el-button>
-            <el-button type="info" @click="handleSaveDraft">存为草稿</el-button>
+            <el-button type="info" plain @click="handleSaveDraft">存为草稿</el-button>
           </div>
         </el-form-item>
       </el-form>
@@ -305,6 +305,7 @@ const handleSaveDraft = async () => {
       ElMessage.success('草稿保存成功')
     }
     hasChanges.value = false
+    router.push('/drafts')
     return true
   } catch (error) {
     console.error('Failed to save draft:', error)
@@ -514,6 +515,21 @@ const loadDraft = async (draftId) => {
       .el-button {
         flex: 0 0 auto;
         white-space: nowrap;
+        
+        &.el-button--primary {
+          --el-button-bg-color: transparent;
+          --el-button-border-color: var(--el-color-primary);
+          --el-button-text-color: var(--el-color-primary);
+          --el-button-hover-text-color: var(--el-color-primary);
+          --el-button-hover-bg-color: var(--el-color-primary-light-9);
+          --el-button-hover-border-color: var(--el-color-primary);
+          --el-button-active-bg-color: var(--el-color-primary-light-8);
+          
+          .el-icon {
+            margin-right: 4px;
+            font-size: 16px;
+          }
+        }
       }
     }
 
@@ -522,6 +538,43 @@ const loadDraft = async (draftId) => {
       justify-content: flex-end;
       gap: 16px;
       margin-top: 24px;
+
+      :deep(.el-button) {
+        padding: 12px 24px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        
+        &.el-button--primary {
+          --el-button-bg-color: var(--el-color-primary);
+          --el-button-border-color: var(--el-color-primary);
+          --el-button-hover-bg-color: var(--el-color-primary-dark-2);
+          --el-button-hover-border-color: var(--el-color-primary-dark-2);
+          --el-button-active-bg-color: var(--el-color-primary-dark-2);
+          box-shadow: 0 2px 6px rgba(0, 84, 255, 0.15);
+          
+          &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 84, 255, 0.2);
+          }
+        }
+        
+        &.el-button--info {
+          &.is-plain {
+            --el-button-bg-color: transparent;
+            --el-button-border-color: var(--el-border-color);
+            --el-button-text-color: var(--el-text-color-regular);
+            --el-button-hover-text-color: var(--el-color-primary);
+            --el-button-hover-bg-color: var(--el-color-primary-light-9);
+            --el-button-hover-border-color: var(--el-color-primary);
+          }
+        }
+
+        &.is-plain {
+          --el-button-hover-text-color: var(--el-color-primary);
+          --el-button-hover-bg-color: var(--el-color-primary-light-9);
+          --el-button-hover-border-color: var(--el-color-primary);
+        }
+      }
     }
   }
 }

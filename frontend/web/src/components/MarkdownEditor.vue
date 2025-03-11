@@ -29,9 +29,9 @@
 
       <div class="toolbar-right">
         <el-radio-group v-model="viewMode" size="small">
-          <el-radio-button label="edit">编辑</el-radio-button>
-          <el-radio-button label="split">分屏</el-radio-button>
-          <el-radio-button label="preview">预览</el-radio-button>
+          <el-radio-button value="edit">编辑</el-radio-button>
+          <el-radio-button value="split">分屏</el-radio-button>
+          <el-radio-button value="preview">预览</el-radio-button>
         </el-radio-group>
       </div>
     </div>
