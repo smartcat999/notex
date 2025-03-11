@@ -92,80 +92,122 @@ onMounted(async () => {
 <style lang="scss" scoped>
 .archives-container {
   max-width: 800px;
-  margin: 20px auto;
+  margin: 32px auto;
   padding: 0 20px;
 }
 
 .archives-card {
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.98);
+  transition: all 0.3s ease;
+  border: none;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 1);
+  }
+
   .card-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 20px 24px;
+    background: linear-gradient(to right, rgba(64, 158, 255, 0.05), rgba(64, 158, 255, 0.02));
+    border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 
     h2 {
       margin: 0;
-      font-size: 1.5rem;
-      color: var(--el-text-color-primary);
+      font-size: 1.4em;
+      font-weight: 600;
+      background: linear-gradient(120deg, #2c3e50, #3498db);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 0.02em;
     }
 
     .total-count {
       color: var(--el-text-color-secondary);
-      font-size: 0.9rem;
+      font-size: 0.85em;
+      background: rgba(64, 158, 255, 0.08);
+      padding: 4px 12px;
+      border-radius: 6px;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: rgba(64, 158, 255, 0.12);
+      }
     }
   }
 }
 
 .archive-item {
-  margin-bottom: 16px;
+  margin: 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+
+  &:last-child {
+    border-bottom: none;
+  }
 
   .archive-header {
     display: flex;
     align-items: center;
     cursor: pointer;
-    padding: 8px;
-    border-radius: 4px;
-    transition: background-color 0.3s;
+    padding: 16px 24px;
+    transition: all 0.3s ease;
 
     &:hover {
-      background-color: var(--el-fill-color-light);
+      background: rgba(64, 158, 255, 0.04);
+
+      .archive-date {
+        color: var(--el-color-primary);
+      }
     }
 
     .el-icon {
-      margin-right: 8px;
-      font-size: 1.2em;
+      margin-right: 12px;
+      font-size: 1.1em;
       color: var(--el-text-color-secondary);
+      transition: transform 0.3s ease;
     }
 
     .archive-date {
-      font-size: 1.1rem;
+      font-size: 1.05em;
       font-weight: 500;
       color: var(--el-text-color-primary);
       margin-right: 12px;
+      transition: color 0.3s ease;
     }
 
     .archive-count {
-      font-size: 0.9rem;
+      font-size: 0.82em;
       color: var(--el-text-color-secondary);
+      background: rgba(0, 0, 0, 0.04);
+      padding: 2px 8px;
+      border-radius: 10px;
     }
   }
 
   .archive-posts {
-    padding-left: 32px;
-    margin-top: 8px;
+    padding: 0 24px 16px 48px;
 
     .post-item {
-      margin: 8px 0;
+      margin: 12px 0;
 
       .post-link {
         display: flex;
         align-items: center;
         text-decoration: none;
-        padding: 6px;
-        border-radius: 4px;
-        transition: all 0.3s;
+        padding: 8px 12px;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.5);
 
         &:hover {
-          background-color: var(--el-fill-color-lighter);
+          background: rgba(64, 158, 255, 0.06);
+          transform: translateX(4px);
           
           .post-title {
             color: var(--el-color-primary);
@@ -173,15 +215,21 @@ onMounted(async () => {
         }
 
         .post-date {
-          font-size: 0.9rem;
+          font-size: 0.85em;
           color: var(--el-text-color-secondary);
           margin-right: 16px;
           min-width: 60px;
+          font-family: Monaco, monospace;
         }
 
         .post-title {
           color: var(--el-text-color-primary);
-          transition: color 0.3s;
+          font-size: 0.95em;
+          transition: color 0.3s ease;
+          flex: 1;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
         }
       }
     }
@@ -192,11 +240,22 @@ onMounted(async () => {
       justify-content: center;
       padding: 20px;
       color: var(--el-text-color-secondary);
+      font-size: 0.9em;
       
       .el-icon {
         margin-right: 8px;
+        animation: rotating 2s linear infinite;
       }
     }
+  }
+}
+
+@keyframes rotating {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 </style> 
