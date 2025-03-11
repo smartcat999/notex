@@ -16,16 +16,11 @@
 
     <div class="hero-section">
       <div class="hero-content">
-        <h2 class="hero-title">欢迎来到 Notex</h2>
-        <p class="hero-subtitle">在这里，你可以记录和分享你的学习笔记、技术心得和生活感悟</p>
+        <h2 class="hero-title">开始你的创作之旅</h2>
       </div>
     </div>
 
     <main class="main-content">
-      <div class="content-header">
-        <h2>最新文章</h2>
-      </div>
-
       <div class="posts-grid" v-loading="loading">
         <el-card v-for="post in posts" :key="post.id" class="post-card" shadow="hover">
           <div class="post-cover" v-if="post.cover">
@@ -197,7 +192,7 @@ onMounted(() => {
 
 .hero-section {
   background: linear-gradient(to bottom, rgba(43, 88, 118, 0.03), rgba(78, 67, 118, 0.02));
-  padding: 4rem 0;
+  padding: 1.5rem 0;
   text-align: center;
   border-bottom: 1px solid rgba(43, 88, 118, 0.1);
 
@@ -207,18 +202,12 @@ onMounted(() => {
     padding: 0 20px;
 
     .hero-title {
-      font-size: 2.5rem;
-      font-weight: 700;
-      margin: 0 0 1rem;
+      font-size: 1.6rem;
+      font-weight: 600;
+      margin: 0;
       background: linear-gradient(135deg, #2B5876, #4E4376);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-    }
-
-    .hero-subtitle {
-      font-size: 1.25rem;
-      color: #4a5568;
-      margin: 0;
     }
   }
 }
@@ -226,37 +215,7 @@ onMounted(() => {
 .main-content {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 3rem 20px;
-
-  .content-header {
-    margin-bottom: 32px;
-    text-align: center;
-
-    h2 {
-      margin: 0;
-      font-size: 1.4em;
-      font-weight: 600;
-      background: linear-gradient(135deg, #2B5876, #4E4376);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      letter-spacing: 0.02em;
-      position: relative;
-      display: inline-block;
-
-      &::after {
-        content: '';
-        position: absolute;
-        bottom: 2px;
-        left: -8px;
-        right: -8px;
-        height: 10px;
-        background-color: rgba(43, 88, 118, 0.12);
-        border-radius: 6px;
-        z-index: -1;
-        transform: skew(-12deg);
-      }
-    }
-  }
+  padding: 2rem 20px;
 }
 
 .posts-grid {
