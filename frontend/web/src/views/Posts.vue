@@ -554,6 +554,16 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    position: sticky;
+    top: 20px;
+    height: fit-content;
+    transition: transform 0.2s ease;
+    will-change: transform;
+    z-index: 1;
+
+    &:hover {
+      transform: translateY(-2px);
+    }
 
     .widget {
       .widget-header {
