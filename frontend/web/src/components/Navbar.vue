@@ -115,16 +115,21 @@ const handleLogout = async () => {
   left: 0;
   right: 0;
   height: 64px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
   z-index: 100;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.98);
+  }
 
   .navbar-container {
     max-width: 1200px;
     height: 100%;
     margin: 0 auto;
-    padding: 0 20px;
+    padding: 0 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -134,12 +139,19 @@ const handleLogout = async () => {
     text-decoration: none;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+    transition: transform 0.3s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+    }
 
     .logo-text {
-      font-size: 1.5em;
-      font-weight: 600;
-      color: #409eff;
+      font-size: 1.6em;
+      font-weight: 700;
+      background: linear-gradient(135deg, #2B5876, #4E4376);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
       letter-spacing: -0.5px;
     }
   }
@@ -147,32 +159,51 @@ const handleLogout = async () => {
   .nav-links {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 4px;
 
     .nav-item {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
       padding: 8px 16px;
-      color: #606266;
+      color: #4a5568;
       text-decoration: none;
       font-size: 0.95em;
-      border-radius: 8px;
-      transition: all 0.3s ease;
+      border-radius: 10px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      font-weight: 500;
 
       .nav-icon {
-        font-size: 1.1em;
+        font-size: 1.15em;
+        transition: transform 0.3s ease;
       }
 
       &:hover {
-        color: #409eff;
-        background: rgba(64, 158, 255, 0.1);
+        color: #2B5876;
+        background: rgba(43, 88, 118, 0.08);
+
+        .nav-icon {
+          transform: translateY(-1px);
+        }
       }
 
       &.active {
-        color: #409eff;
-        background: rgba(64, 158, 255, 0.1);
-        font-weight: 500;
+        color: #2B5876;
+        background: rgba(43, 88, 118, 0.1);
+        font-weight: 600;
+
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: 6px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 16px;
+          height: 2px;
+          background: #2B5876;
+          border-radius: 2px;
+        }
       }
     }
   }
@@ -180,22 +211,33 @@ const handleLogout = async () => {
   .nav-right {
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 20px;
 
     .write-btn {
       display: flex;
       align-items: center;
-      gap: 4px;
-      padding: 8px 16px;
-      border-radius: 8px;
-      transition: all 0.3s ease;
+      gap: 6px;
+      padding: 9px 20px;
+      border-radius: 10px;
+      font-weight: 500;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: none;
+      background: linear-gradient(135deg, #2B5876, #4E4376);
+      box-shadow: 0 2px 12px rgba(43, 88, 118, 0.2);
+      color: #fff;
 
       .el-icon {
-        font-size: 1.1em;
+        font-size: 1.15em;
+        transition: transform 0.3s ease;
       }
 
       &:hover {
         transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(43, 88, 118, 0.25);
+
+        .el-icon {
+          transform: rotate(-12deg);
+        }
       }
     }
 
@@ -205,12 +247,18 @@ const handleLogout = async () => {
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 2px;
+        padding: 4px;
         border-radius: 50%;
         transition: all 0.3s ease;
 
         &:hover {
-          background: rgba(0, 0, 0, 0.05);
+          background: rgba(0, 0, 0, 0.04);
+          transform: translateY(-1px);
+        }
+
+        .el-avatar {
+          border: 2px solid #fff;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         }
       }
     }
@@ -221,10 +269,45 @@ const handleLogout = async () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 20px;
+  padding: 12px 20px;
+  font-size: 0.95em;
   
   .el-icon {
-    font-size: 1.1em;
+    font-size: 1.15em;
+    margin-right: 2px;
+  }
+
+  &:hover {
+    background: rgba(43, 88, 118, 0.08);
+    color: #2B5876;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar {
+    .navbar-container {
+      padding: 0 16px;
+    }
+
+    .nav-links {
+      .nav-item {
+        padding: 8px 12px;
+        font-size: 0.9em;
+
+        .nav-icon {
+          font-size: 1.1em;
+        }
+      }
+    }
+
+    .nav-right {
+      gap: 12px;
+
+      .write-btn {
+        padding: 8px 16px;
+        font-size: 0.9em;
+      }
+    }
   }
 }
 </style> 

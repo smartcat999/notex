@@ -113,12 +113,12 @@ const fetchPosts = async () => {
       page_size: pageSize.value
     }
     const response = await getPublicPosts(params)
-    console.log('API Response:', response)
+    // console.log('API Response:', response)
     posts.value = response.items || []
     total.value = response.total || 0
-    console.log('Posts after assignment:', posts.value)
+    // console.log('Posts after assignment:', posts.value)
   } catch (error) {
-    console.error('Failed to fetch posts:', error)
+    // console.error('Failed to fetch posts:', error)
     ElMessage.error('获取文章列表失败')
   } finally {
     loading.value = false
@@ -147,7 +147,7 @@ onMounted(() => {
 }
 
 .site-header {
-  background: linear-gradient(135deg, var(--el-color-primary) 0%, var(--el-color-primary-light-3) 100%);
+  background: linear-gradient(135deg, #2B5876 0%, #4E4376 100%);
   padding: 1.5rem 0;
   color: white;
 
@@ -165,6 +165,7 @@ onMounted(() => {
         font-size: 2.5rem;
         font-weight: 700;
         letter-spacing: -1px;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
       }
 
       .slogan {
@@ -178,13 +179,16 @@ onMounted(() => {
       .login-button {
         font-size: 1.1rem;
         padding: 12px 30px;
-        background: white;
-        color: var(--el-color-primary);
-        border: none;
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
 
         &:hover {
-          background: rgba(255, 255, 255, 0.9);
+          background: rgba(255, 255, 255, 0.25);
           transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
       }
     }
@@ -192,10 +196,10 @@ onMounted(() => {
 }
 
 .hero-section {
-  background: white;
+  background: linear-gradient(to bottom, rgba(43, 88, 118, 0.03), rgba(78, 67, 118, 0.02));
   padding: 4rem 0;
   text-align: center;
-  border-bottom: 1px solid var(--el-border-color-light);
+  border-bottom: 1px solid rgba(43, 88, 118, 0.1);
 
   .hero-content {
     max-width: 800px;
@@ -206,14 +210,14 @@ onMounted(() => {
       font-size: 2.5rem;
       font-weight: 700;
       margin: 0 0 1rem;
-      background: linear-gradient(to right, var(--el-color-primary), var(--el-color-primary-light-3));
+      background: linear-gradient(135deg, #2B5876, #4E4376);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
     .hero-subtitle {
       font-size: 1.25rem;
-      color: var(--el-text-color-secondary);
+      color: #4a5568;
       margin: 0;
     }
   }
@@ -225,14 +229,32 @@ onMounted(() => {
   padding: 3rem 20px;
 
   .content-header {
-    margin-bottom: 2rem;
+    margin-bottom: 32px;
     text-align: center;
 
     h2 {
-      font-size: 2rem;
-      font-weight: 600;
       margin: 0;
-      color: var(--el-text-color-primary);
+      font-size: 1.4em;
+      font-weight: 600;
+      background: linear-gradient(135deg, #2B5876, #4E4376);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 0.02em;
+      position: relative;
+      display: inline-block;
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        left: -8px;
+        right: -8px;
+        height: 10px;
+        background-color: rgba(43, 88, 118, 0.12);
+        border-radius: 6px;
+        z-index: -1;
+        transform: skew(-12deg);
+      }
     }
   }
 }
@@ -246,15 +268,23 @@ onMounted(() => {
   .post-card {
     border-radius: 12px;
     transition: all 0.3s ease;
+    border: none;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 2px 12px rgba(43, 88, 118, 0.08);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 
     &:hover {
       transform: translateY(-5px);
+      box-shadow: 0 6px 20px rgba(43, 88, 118, 0.12);
+      background: rgba(255, 255, 255, 1);
     }
 
     .post-cover {
       height: 200px;
       overflow: hidden;
-      border-radius: 8px;
+      border-radius: 8px 8px 0 0;
       margin: -20px -20px 20px;
 
       img {
@@ -265,25 +295,39 @@ onMounted(() => {
     }
 
     .post-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+
       .post-title {
         margin: 0 0 1rem;
         font-size: 1.25rem;
         
         a {
-          color: var(--el-text-color-primary);
+          color: #2c3e50;
           text-decoration: none;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          line-height: 1.5;
           
           &:hover {
-            color: var(--el-color-primary);
+            color: #2B5876;
           }
         }
       }
 
       .post-summary {
         margin: 0 0 1rem;
-        color: var(--el-text-color-regular);
+        color: #4a5568;
         font-size: 0.95rem;
         line-height: 1.6;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        flex: 1;
       }
 
       .post-meta {
@@ -291,7 +335,7 @@ onMounted(() => {
         flex-wrap: wrap;
         gap: 1rem;
         margin-bottom: 1rem;
-        color: var(--el-text-color-secondary);
+        color: #718096;
         font-size: 0.875rem;
 
         .meta-item {
@@ -302,6 +346,7 @@ onMounted(() => {
       }
 
       .post-footer {
+        margin-top: auto;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -310,20 +355,72 @@ onMounted(() => {
           display: flex;
           gap: 0.5rem;
           flex-wrap: wrap;
+
+          .el-tag {
+            background: rgba(43, 88, 118, 0.06);
+            border: none;
+            color: #2B5876;
+            transition: all 0.3s ease;
+
+            &:hover {
+              background: rgba(43, 88, 118, 0.1);
+              transform: translateY(-1px);
+            }
+          }
         }
 
         .read-more {
           display: flex;
           align-items: center;
           gap: 4px;
-          color: var(--el-color-primary);
+          color: #2B5876;
           text-decoration: none;
-          font-size: 0.95rem;
+          font-size: 0.9rem;
+          font-weight: 500;
           transition: all 0.3s ease;
+          padding: 4px 8px;
+          border-radius: 4px;
 
           &:hover {
-            gap: 8px;
+            background: rgba(43, 88, 118, 0.08);
+            transform: translateX(4px);
           }
+
+          .el-icon {
+            transition: transform 0.3s ease;
+          }
+
+          &:hover .el-icon {
+            transform: translateX(2px);
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .posts-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    
+    .post-card {
+      .post-cover {
+        height: 180px;
+      }
+      
+      .post-content {
+        .post-title {
+          font-size: 1.2rem;
+        }
+        
+        .post-summary {
+          font-size: 0.9rem;
+          -webkit-line-clamp: 2;
+        }
+        
+        .post-meta {
+          font-size: 0.8rem;
         }
       }
     }
@@ -334,5 +431,20 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   margin-top: 3rem;
+
+  :deep(.el-pagination) {
+    --el-pagination-hover-color: #2B5876;
+    
+    .el-pager li {
+      &.is-active {
+        background: linear-gradient(135deg, #2B5876, #4E4376);
+        color: white;
+      }
+      
+      &:hover:not(.is-active) {
+        color: #2B5876;
+      }
+    }
+  }
 }
 </style> 

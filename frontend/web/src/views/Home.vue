@@ -204,32 +204,46 @@ onMounted(async () => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
-    padding: 0 4px;
 
     h2 {
       margin: 0;
       font-size: 1.4em;
       font-weight: 600;
-      background: linear-gradient(120deg, #2c3e50, #3498db);
+      background: linear-gradient(135deg, #2B5876, #4E4376);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       letter-spacing: 0.02em;
+      position: relative;
+      display: inline-block;
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        left: -8px;
+        right: -8px;
+        height: 10px;
+        background-color: rgba(43, 88, 118, 0.12);
+        border-radius: 6px;
+        z-index: -1;
+        transform: skew(-12deg);
+      }
     }
 
     .view-all {
       display: flex;
       align-items: center;
       gap: 4px;
-      color: var(--el-color-primary);
+      color: #2B5876;
       text-decoration: none;
       font-size: 0.9em;
       padding: 6px 12px;
       border-radius: 6px;
       transition: all 0.3s ease;
-      background: rgba(64, 158, 255, 0.08);
+      background: rgba(43, 88, 118, 0.08);
 
       &:hover {
-        background: rgba(64, 158, 255, 0.12);
+        background: rgba(43, 88, 118, 0.12);
         transform: translateX(2px);
       }
     }
@@ -318,8 +332,8 @@ onMounted(async () => {
           overflow: hidden;
 
           &:hover {
-            color: var(--el-color-primary);
-            text-shadow: 0 0 1px rgba(64, 158, 255, 0.15);
+            color: #2B5876;
+            text-shadow: 0 0 1px rgba(43, 88, 118, 0.15);
           }
         }
       }
@@ -354,15 +368,15 @@ onMounted(async () => {
           }
 
           &.post-category {
-            color: var(--el-color-primary);
+            color: #2B5876;
             font-weight: 500;
-            background: rgba(64, 158, 255, 0.08);
+            background: rgba(43, 88, 118, 0.08);
             padding: 2px 8px;
             border-radius: 4px;
             transition: all 0.3s ease;
 
             &:hover {
-              background: rgba(64, 158, 255, 0.12);
+              background: rgba(43, 88, 118, 0.12);
             }
           }
         }
@@ -394,7 +408,7 @@ onMounted(async () => {
       align-items: center;
       padding: 14px 16px;
       border-bottom: 1px solid rgba(0, 0, 0, 0.04);
-      background: linear-gradient(to right, rgba(64, 158, 255, 0.04), rgba(64, 158, 255, 0.01));
+      background: linear-gradient(to right, rgba(43, 88, 118, 0.05), rgba(43, 88, 118, 0.02));
 
       h3 {
         margin: 0;
@@ -407,16 +421,16 @@ onMounted(async () => {
         display: flex;
         align-items: center;
         gap: 4px;
-        color: var(--el-color-primary);
+        color: #2B5876;
         text-decoration: none;
         font-size: 0.85em;
         padding: 4px 8px;
         border-radius: 4px;
         transition: all 0.3s ease;
-        background: rgba(64, 158, 255, 0.06);
+        background: rgba(43, 88, 118, 0.06);
 
         &:hover {
-          background: rgba(64, 158, 255, 0.1);
+          background: rgba(43, 88, 118, 0.1);
           transform: translateX(2px);
         }
       }
@@ -465,11 +479,11 @@ onMounted(async () => {
     padding: 12px 16px;
 
     .tag-item {
-      color: #606266;
+      color: #4a5568;
       text-decoration: none;
       padding: 4px 10px;
       border-radius: 4px;
-      background: rgba(64, 158, 255, 0.06);
+      background: rgba(43, 88, 118, 0.06);
       transition: all 0.3s ease;
       display: flex;
       align-items: center;
@@ -478,14 +492,14 @@ onMounted(async () => {
 
       &:hover {
         color: #fff;
-        background: var(--el-color-primary);
+        background: linear-gradient(135deg, #2B5876, #4E4376);
         transform: translateY(-1px);
       }
 
       .tag-count {
         font-size: 0.85em;
         opacity: 0.8;
-        background: rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 0.2);
         padding: 1px 6px;
         border-radius: 8px;
       }

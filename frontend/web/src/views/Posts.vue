@@ -358,102 +358,71 @@ onMounted(() => {
 <style scoped lang="scss">
 .posts-page {
   max-width: 1200px;
-  margin: 32px auto;
-  padding: 0 20px;
+  margin: 0 auto;
+  padding: 20px;
 
   .page-header {
-    margin-bottom: 40px;
-    padding: 24px 0;
-    position: relative;
-    background: linear-gradient(to right, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.98));
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80%;
-      height: 1px;
-      background: linear-gradient(to right, rgba(64, 158, 255, 0), rgba(64, 158, 255, 0.5), rgba(64, 158, 255, 0));
-    }
+    margin-bottom: 32px;
+    padding: 0;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
 
     .title-section {
-      margin-bottom: 32px;
       text-align: center;
-      
+      margin-bottom: 24px;
+
       .title-wrapper {
-        display: inline-block;
-        position: relative;
-        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 8px;
 
         h1 {
+          font-size: 1.5em;
+          font-weight: 600;
+          color: #2c3e50;
           margin: 0;
-          font-size: 2.2em;
-          font-weight: 700;
-          background: linear-gradient(120deg, #2c3e50, #3498db);
+          position: relative;
+          display: inline-block;
+          background: linear-gradient(135deg, #2B5876, #4E4376);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
-          letter-spacing: 0.05em;
-          position: relative;
-          z-index: 1;
-        }
-
-        .title-decoration {
-          position: absolute;
-          bottom: 12px;
-          left: -12px;
-          right: -12px;
-          height: 16px;
-          background-color: rgba(64, 158, 255, 0.15);
-          border-radius: 8px;
-          z-index: 0;
-          transform: skew(-12deg);
         }
       }
 
       .subtitle {
+        color: #606266;
+        font-size: 0.95em;
         margin: 0;
-        font-size: 1.1em;
-        color: #5c6b77;
-        font-weight: 300;
-        letter-spacing: 0.03em;
-        opacity: 0.85;
+        opacity: 0.8;
       }
     }
 
     .header-actions {
       display: flex;
-      justify-content: center;
       gap: 16px;
-      margin-top: 28px;
-      padding: 0 20px;
+      justify-content: center;
+      align-items: center;
 
       .search-input {
-        width: 400px;
-        :deep(.el-input__wrapper) {
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-          border-radius: 8px;
-        }
+        width: 300px;
       }
 
       .el-select {
         width: 140px;
-        :deep(.el-input__wrapper) {
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-          border-radius: 8px;
-        }
       }
     }
   }
 
   .posts-container {
+    max-width: 900px;
+    margin: 0 auto;
+
     .posts-list {
       .post-card {
-        margin-bottom: 16px;
+        margin-bottom: 32px;
+        padding: 32px;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border: none;
         border-radius: 10px;
@@ -476,17 +445,17 @@ onMounted(() => {
         .post-content {
           display: flex;
           align-items: flex-start;
-          gap: 20px;
+          gap: 32px;
 
           .post-main {
             flex: 1;
             min-width: 0;
 
             .post-title {
-              margin: 0 0 10px;
-              font-size: 1.15em;
+              margin: 0 0 20px;
+              font-size: 1.25em;
               font-weight: 600;
-              line-height: 1.4;
+              line-height: 1.5;
 
               a {
                 color: #2c3e50;
@@ -498,25 +467,26 @@ onMounted(() => {
                 overflow: hidden;
 
                 &:hover {
-                  color: var(--el-color-primary);
-                  text-shadow: 0 0 1px rgba(64, 158, 255, 0.15);
+                  color: #2B5876;
+                  text-shadow: 0 0 1px rgba(43, 88, 118, 0.15);
                 }
               }
             }
 
             .post-summary {
-              margin: 0 0 12px;
+              margin: 0 0 24px;
               color: #606266;
-              font-size: 0.9em;
-              line-height: 1.6;
+              font-size: 1em;
+              line-height: 1.8;
               display: -webkit-box;
-              -webkit-line-clamp: 2;
+              -webkit-line-clamp: 4;
               -webkit-box-orient: vertical;
               overflow: hidden;
               opacity: 0.9;
             }
 
             .post-meta {
+              margin-top: 16px;
               display: flex;
               gap: 12px;
               align-items: center;
@@ -536,15 +506,15 @@ onMounted(() => {
                 }
 
                 &.post-category {
-                  color: var(--el-color-primary);
+                  color: #2B5876;
                   font-weight: 500;
-                  background: rgba(64, 158, 255, 0.08);
+                  background: rgba(43, 88, 118, 0.08);
                   padding: 2px 8px;
                   border-radius: 4px;
                   transition: all 0.3s ease;
 
                   &:hover {
-                    background: rgba(64, 158, 255, 0.12);
+                    background: rgba(43, 88, 118, 0.12);
                   }
                 }
               }
@@ -552,8 +522,8 @@ onMounted(() => {
           }
 
           .post-cover {
-            flex: 0 0 360px;
-            height: 220px;
+            flex: 0 0 240px;
+            height: 160px;
             border-radius: 6px;
             overflow: hidden;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -599,8 +569,8 @@ onMounted(() => {
         }
 
         .post-footer {
-          margin-top: 14px;
-          padding-top: 14px;
+          margin-top: 24px;
+          padding-top: 24px;
           border-top: 1px solid rgba(0, 0, 0, 0.04);
 
           .post-tags {
@@ -614,13 +584,13 @@ onMounted(() => {
               padding: 0 8px;
               height: 22px;
               line-height: 20px;
-              background: rgba(var(--el-color-primary-rgb), 0.06);
+              background: rgba(43, 88, 118, 0.06);
               border: none;
-              color: var(--el-color-primary);
+              color: #2B5876;
               transition: all 0.3s ease;
 
               &:hover {
-                background: rgba(var(--el-color-primary-rgb), 0.1);
+                background: rgba(43, 88, 118, 0.1);
                 transform: translateY(-1px);
               }
             }
@@ -681,7 +651,7 @@ onMounted(() => {
       .widget-header {
         padding: 16px 20px;
         border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-        background: linear-gradient(to right, rgba(64, 158, 255, 0.05), rgba(64, 158, 255, 0.02));
+        background: linear-gradient(to right, rgba(43, 88, 118, 0.05), rgba(43, 88, 118, 0.02));
 
         h3 {
           margin: 0;
@@ -702,12 +672,14 @@ onMounted(() => {
         cursor: pointer;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         border: none;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        box-shadow: 0 2px 6px rgba(43, 88, 118, 0.1);
         border-radius: 6px;
 
         &:hover {
           transform: translateY(-2px) scale(1.05);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+          box-shadow: 0 4px 8px rgba(43, 88, 118, 0.15);
+          background: linear-gradient(135deg, #2B5876, #4E4376);
+          color: white;
         }
       }
     }

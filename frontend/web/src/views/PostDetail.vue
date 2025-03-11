@@ -278,30 +278,42 @@ onUnmounted(() => {
 .post-detail-container {
   max-width: 900px;
   margin: 0 auto;
-  padding: 60px 20px;
+  padding: 40px 20px;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   color: #24292f;
   line-height: 1.6;
 
   .post-header {
-    margin-bottom: 32px;
-    text-align: center;
     position: relative;
-    padding: 0;
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.03);
+    margin-bottom: 24px;
+    border-radius: 16px;
     overflow: hidden;
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 4px 20px rgba(43, 88, 118, 0.08);
 
     &.no-cover {
-      padding: 32px 24px;
-
+      background: linear-gradient(135deg, rgba(43, 88, 118, 0.05), rgba(78, 67, 118, 0.05));
+      padding: 32px 40px 28px;
+      min-height: 140px;
+      
       .header-content {
+        position: relative;
         padding: 0;
-      }
+        background: none;
 
-      h1 {
-        margin-bottom: 20px;
+        h1 {
+          font-size: 1.8em;
+          line-height: 1.6;
+          margin: 0 0 14px;
+        }
+
+        .post-meta {
+          margin-bottom: 10px;
+        }
+
+        .post-tags {
+          margin-top: 0;
+        }
       }
     }
 
@@ -345,15 +357,15 @@ onUnmounted(() => {
     }
 
     h1 {
-      font-size: 1.6em;
+      font-size: 1.8em;
       margin-bottom: 14px;
-      color: #1f2937;
       font-weight: 600;
-      line-height: 1.3;
+      line-height: 1.4;
       letter-spacing: -0.01em;
-      background: linear-gradient(120deg, #1f2937 0%, #4b5563 100%);
+      background: linear-gradient(135deg, #2B5876, #4E4376);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
+      text-align: center;
     }
 
     .post-meta {
@@ -370,18 +382,18 @@ onUnmounted(() => {
         align-items: center;
         gap: 6px;
         padding: 3px 8px;
-        background: #f9fafb;
+        background: rgba(43, 88, 118, 0.08);
         border-radius: 16px;
         transition: all 0.3s ease;
 
         &:hover {
-          background: #f3f4f6;
+          background: rgba(43, 88, 118, 0.12);
           transform: translateY(-1px);
         }
 
         .el-icon {
           font-size: 0.95em;
-          color: var(--el-color-primary);
+          color: #2B5876;
         }
       }
     }
@@ -391,6 +403,7 @@ onUnmounted(() => {
       justify-content: center;
       gap: 8px;
       flex-wrap: wrap;
+      margin-top: 16px;
 
       .tag {
         margin: 0;
@@ -401,13 +414,14 @@ onUnmounted(() => {
         transition: all 0.3s ease;
         cursor: pointer;
         border: none;
-        background: var(--el-color-primary-light-9);
-        color: var(--el-color-primary-dark-2);
+        background: rgba(43, 88, 118, 0.08);
+        color: #2B5876;
+        backdrop-filter: blur(4px);
 
         &:hover {
           transform: translateY(-2px);
-          background: var(--el-color-primary-light-8);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+          background: rgba(43, 88, 118, 0.12);
+          box-shadow: 0 4px 12px rgba(43, 88, 118, 0.1);
         }
       }
     }
@@ -486,7 +500,7 @@ onUnmounted(() => {
       transform: translateY(-50%);
       width: 4px;
       height: 20px;
-      background: linear-gradient(180deg, var(--el-color-primary), var(--el-color-primary-light-5));
+      background: linear-gradient(180deg, #2B5876, #4E4376);
       border-radius: 3px;
     }
   }
@@ -506,8 +520,8 @@ onUnmounted(() => {
       font-size: 0.95em;
 
       &:focus {
-        border-color: var(--el-color-primary);
-        box-shadow: 0 0 0 3px var(--el-color-primary-light-8);
+        border-color: #2B5876;
+        box-shadow: 0 0 0 3px rgba(43, 88, 118, 0.1);
       }
     }
 
@@ -517,6 +531,14 @@ onUnmounted(() => {
       padding: 8px 16px;
       font-size: 0.95em;
       border-radius: 8px;
+      background: linear-gradient(135deg, #2B5876, #4E4376);
+      border: none;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(43, 88, 118, 0.2);
+      }
     }
   }
 

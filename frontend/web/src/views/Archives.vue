@@ -115,29 +115,29 @@ onMounted(async () => {
     align-items: center;
     justify-content: space-between;
     padding: 20px 24px;
-    background: linear-gradient(to right, rgba(64, 158, 255, 0.05), rgba(64, 158, 255, 0.02));
+    background: linear-gradient(to right, rgba(43, 88, 118, 0.05), rgba(43, 88, 118, 0.02));
     border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 
     h2 {
       margin: 0;
       font-size: 1.4em;
       font-weight: 600;
-      background: linear-gradient(120deg, #2c3e50, #3498db);
+      background: linear-gradient(135deg, #2B5876, #4E4376);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       letter-spacing: 0.02em;
     }
 
     .total-count {
-      color: var(--el-text-color-secondary);
+      color: #4a5568;
       font-size: 0.85em;
-      background: rgba(64, 158, 255, 0.08);
+      background: rgba(43, 88, 118, 0.08);
       padding: 4px 12px;
       border-radius: 6px;
       transition: all 0.3s ease;
 
       &:hover {
-        background: rgba(64, 158, 255, 0.12);
+        background: rgba(43, 88, 118, 0.12);
       }
     }
   }
@@ -159,10 +159,10 @@ onMounted(async () => {
     transition: all 0.3s ease;
 
     &:hover {
-      background: rgba(64, 158, 255, 0.04);
+      background: rgba(43, 88, 118, 0.04);
 
       .archive-date {
-        color: var(--el-color-primary);
+        color: #2B5876;
       }
     }
 
@@ -176,7 +176,7 @@ onMounted(async () => {
     .archive-date {
       font-size: 1.05em;
       font-weight: 500;
-      color: var(--el-text-color-primary);
+      color: #2c3e50;
       margin-right: 12px;
       transition: color 0.3s ease;
     }
@@ -184,7 +184,7 @@ onMounted(async () => {
     .archive-count {
       font-size: 0.82em;
       color: var(--el-text-color-secondary);
-      background: rgba(0, 0, 0, 0.04);
+      background: rgba(43, 88, 118, 0.08);
       padding: 2px 8px;
       border-radius: 10px;
     }
@@ -206,24 +206,24 @@ onMounted(async () => {
         background: rgba(255, 255, 255, 0.5);
 
         &:hover {
-          background: rgba(64, 158, 255, 0.06);
+          background: rgba(43, 88, 118, 0.06);
           transform: translateX(4px);
           
           .post-title {
-            color: var(--el-color-primary);
+            color: #2B5876;
           }
         }
 
         .post-date {
           font-size: 0.85em;
-          color: var(--el-text-color-secondary);
+          color: #4a5568;
           margin-right: 16px;
           min-width: 60px;
           font-family: Monaco, monospace;
         }
 
         .post-title {
-          color: var(--el-text-color-primary);
+          color: #2c3e50;
           font-size: 0.95em;
           transition: color 0.3s ease;
           flex: 1;

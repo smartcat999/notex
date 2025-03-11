@@ -148,23 +148,121 @@ const handleSubmit = async () => {
 </script>
 
 <style lang="scss" scoped>
+.el-form {
+  padding: 1.5rem;
+  
+  :deep(.el-form-item__label) {
+    font-weight: 500;
+    color: #2c3e50;
+    font-size: 0.9rem;
+    padding-bottom: 8px;
+  }
+
+  :deep(.el-input__wrapper) {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+    transition: all 0.2s ease;
+
+    &:hover {
+      border-color: #2B5876;
+      background: white;
+    }
+
+    &.is-focus {
+      border-color: #2B5876;
+      background: white;
+      box-shadow: 0 2px 8px rgba(43, 88, 118, 0.08) !important;
+    }
+  }
+
+  :deep(.el-input__inner) {
+    height: 40px;
+    color: #2c3e50;
+
+    &::placeholder {
+      color: #94a3b8;
+    }
+  }
+
+  :deep(.el-checkbox__input) {
+    .el-checkbox__inner {
+      border-color: #e2e8f0;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: #2B5876;
+      }
+    }
+
+    &.is-checked .el-checkbox__inner {
+      background: #2B5876;
+      border-color: #2B5876;
+    }
+  }
+
+  :deep(.el-checkbox__label) {
+    color: #64748b;
+    font-size: 0.9rem;
+  }
+
+  :deep(.el-link) {
+    color: #2B5876;
+    font-weight: 500;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      color: #4E4376;
+      background: rgba(43, 88, 118, 0.08);
+    }
+  }
+}
+
 .submit-btn {
   width: 100%;
-  margin-bottom: 16px;
+  height: 44px;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  margin: 1.5rem 0;
+  background: linear-gradient(135deg, #2B5876, #4E4376);
+  border: none;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(43, 88, 118, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 }
 
 .login-link {
   text-align: center;
-  font-size: 14px;
-  color: var(--el-text-color-regular);
+  font-size: 0.9rem;
+  color: #64748b;
 
   a {
-    color: var(--el-color-primary);
+    color: #2B5876;
     text-decoration: none;
+    margin-left: 0.25rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    position: relative;
+    padding: 4px 8px;
+    border-radius: 6px;
 
     &:hover {
-      text-decoration: underline;
+      color: #4E4376;
+      background: rgba(43, 88, 118, 0.08);
     }
   }
 }
-</style> 
+</style>

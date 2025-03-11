@@ -10,7 +10,7 @@
 
     <main class="auth-main">
       <div class="auth-card">
-        <h2 class="auth-title">登录</h2>
+        <h2 class="auth-title">{{ title }}</h2>
         <router-view />
       </div>
     </main>
@@ -50,36 +50,29 @@ const showRegisterLink = computed(() => {
 <style lang="scss" scoped>
 .auth-layout {
   min-height: 100vh;
-  background: linear-gradient(
-    135deg,
-    rgba(var(--el-color-primary-rgb), 0.05) 0%,
-    rgba(var(--el-color-primary-rgb), 0.02) 100%
-  );
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #f5f7fa 0%, #f8f9fb 100%);
 }
 
 .auth-header {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.8);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 1.5rem 0;
+  background: transparent;
 
   .header-content {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 1rem 2rem;
+    padding: 0 2rem;
 
     .logo {
       text-decoration: none;
+      display: inline-block;
 
       h1 {
-        font-size: 1.75rem;
+        font-size: 1.6rem;
         font-weight: 700;
         margin: 0;
-        background: linear-gradient(to right, var(--el-color-primary), var(--el-color-primary-light-3));
+        background: linear-gradient(135deg, #2B5876, #4E4376);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         letter-spacing: -0.5px;
@@ -89,41 +82,55 @@ const showRegisterLink = computed(() => {
 }
 
 .auth-main {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100vh;
   padding: 2rem;
+  position: relative;
+  margin-top: -2rem;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(43, 88, 118, 0.03) 0%, rgba(78, 67, 118, 0.02) 50%, transparent 70%);
+    border-radius: 50%;
+  }
 }
 
 .auth-card {
   width: 100%;
-  max-width: 400px;
-  padding: 2.5rem;
-  background: var(--el-bg-color);
-  border-radius: 12px;
-  box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.08);
+  max-width: 360px;
+  background: white;
+  border-radius: 16px;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
 
   .auth-title {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
     font-weight: 600;
-    color: var(--el-text-color-primary);
-    margin: 0 0 2rem;
+    color: #2c3e50;
+    margin: 0;
+    padding: 1rem 1.5rem;
     text-align: center;
+    position: relative;
   }
 }
 
 @media (max-width: 768px) {
   .auth-header .header-content {
-    padding: 1rem;
+    padding: 0 1rem;
   }
 
   .auth-main {
-    padding: 1rem;
-  }
-
-  .auth-card {
-    padding: 1.5rem;
+    padding: 1.5rem 1rem;
   }
 }
 </style> 

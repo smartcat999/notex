@@ -197,10 +197,10 @@ watch(
 
   h1 {
     margin-bottom: 30px;
-    font-size: 1.8em;
+    font-size: 1.4em;
     font-weight: 600;
     text-align: center;
-    background: linear-gradient(120deg, #2c3e50, #3498db);
+    background: linear-gradient(135deg, #2B5876, #4E4376);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: 0.02em;
@@ -212,11 +212,11 @@ watch(
     &::after {
       content: '';
       position: absolute;
-      bottom: 4px;
+      bottom: 2px;
       left: -8px;
       right: -8px;
-      height: 12px;
-      background-color: rgba(64, 158, 255, 0.15);
+      height: 10px;
+      background-color: rgba(43, 88, 118, 0.12);
       border-radius: 6px;
       z-index: -1;
       transform: skew(-12deg);
@@ -275,11 +275,12 @@ watch(
 .tag-posts {
   h2 {
     margin-bottom: 20px;
-    font-size: 1.4em;
+    font-size: 1.3em;
     font-weight: 600;
-    background: linear-gradient(120deg, #2c3e50, #3498db);
+    background: linear-gradient(135deg, #2B5876, #4E4376);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    letter-spacing: 0.01em;
     padding: 16px 20px;
     border-radius: 10px;
     background-color: rgba(255, 255, 255, 0.98);
@@ -427,14 +428,14 @@ watch(
 
           .tag {
             font-size: 0.75em;
-            color: var(--el-color-primary);
-            background: rgba(64, 158, 255, 0.08);
+            color: #2B5876;
+            background: rgba(43, 88, 118, 0.08);
             padding: 4px 10px;
             border-radius: 6px;
             transition: all 0.3s ease;
 
             &:hover {
-              background: rgba(64, 158, 255, 0.12);
+              background: rgba(43, 88, 118, 0.12);
               transform: translateY(-1px);
             }
           }
@@ -442,13 +443,13 @@ watch(
 
         .el-button {
           font-size: 0.85em;
-          background: rgba(64, 158, 255, 0.08);
+          background: rgba(43, 88, 118, 0.08);
           padding: 4px 12px;
           border-radius: 6px;
           transition: all 0.3s ease;
 
           &:hover {
-            background: rgba(64, 158, 255, 0.12);
+            background: rgba(43, 88, 118, 0.12);
             transform: translateX(2px);
           }
         }
