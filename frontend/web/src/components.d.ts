@@ -39,11 +39,16 @@ declare module 'vue' {
     ElSelect: typeof import('element-plus/es')['ElSelect']
     ElSkeleton: typeof import('element-plus/es')['ElSkeleton']
     ElTag: typeof import('element-plus/es')['ElTag']
+    ElUpload: typeof import('element-plus/es')['ElUpload']
+    FileUpload: typeof import('./components/FileUpload.vue')['default']
     MarkdownEditor: typeof import('./components/MarkdownEditor.vue')['default']
     Navbar: typeof import('./components/Navbar.vue')['default']
     PostArchives: typeof import('./components/PostArchives.vue')['default']
+    PostCard: typeof import('./components/PostCard.vue')['default']
+    PostHeader: typeof import('./components/PostHeader.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    TagsCloud: typeof import('./components/TagsCloud.vue')['default']
   }
   export interface ComponentCustomProperties {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

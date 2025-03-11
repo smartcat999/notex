@@ -8,6 +8,7 @@ type Post struct {
 	Title       string    `json:"title" gorm:"not null"`
 	Content     string    `json:"content" gorm:"type:text"`
 	Summary     string    `json:"summary" gorm:"type:text"`
+	Cover       string    `json:"cover" gorm:"type:varchar(255)"` // 文章封面图片URL
 	Slug        string    `json:"slug" gorm:"uniqueIndex"`
 	UserID      uint      `json:"user_id" gorm:"not null"`
 	CategoryID  uint      `json:"category_id"`

@@ -12,6 +12,7 @@ type Draft struct {
 	Title      string         `json:"title" gorm:"type:varchar(255);not null"`
 	Content    string         `json:"content" gorm:"type:text"`
 	Summary    string         `json:"summary" gorm:"type:text"`
+	Cover      string         `json:"cover" gorm:"type:varchar(255)"` // 文章封面图片URL
 	CategoryID uint           `json:"category_id"`
 	UserID     uint           `json:"user_id" gorm:"not null"`
 	CreatedAt  time.Time      `json:"created_at"`

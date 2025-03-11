@@ -72,6 +72,7 @@ func (s *DraftService) CreateDraft(userID uint, req dto.CreateDraftRequest) (*dt
 		Title:      req.Title,
 		Content:    req.Content,
 		Summary:    req.Summary,
+		Cover:      req.Cover,
 		CategoryID: req.CategoryID,
 		UserID:     userID,
 	}
@@ -134,6 +135,9 @@ func (s *DraftService) UpdateDraft(id, userID uint, req dto.UpdateDraftRequest) 
 	}
 	if req.Summary != "" {
 		draft.Summary = req.Summary
+	}
+	if req.Cover != "" {
+		draft.Cover = req.Cover
 	}
 	if req.CategoryID != 0 {
 		draft.CategoryID = req.CategoryID
@@ -198,6 +202,7 @@ func convertDraftToResponse(draft *model.Draft) dto.DraftResponse {
 		Title:      draft.Title,
 		Content:    draft.Content,
 		Summary:    draft.Summary,
+		Cover:      draft.Cover,
 		CategoryID: draft.CategoryID,
 		CreatedAt:  draft.CreatedAt,
 		UpdatedAt:  draft.UpdatedAt,

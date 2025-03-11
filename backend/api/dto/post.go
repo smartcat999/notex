@@ -13,6 +13,7 @@ type CreatePostRequest struct {
 	Title      string `json:"title" binding:"required"`
 	Content    string `json:"content" binding:"required"`
 	Summary    string `json:"summary"`
+	Cover      string `json:"cover"`
 	Slug       string `json:"slug"`
 	CategoryID uint   `json:"category_id"`
 	TagIDs     []uint `json:"tag_ids"`
@@ -25,6 +26,7 @@ type UpdatePostRequest struct {
 	Title      string `json:"title"`
 	Content    string `json:"content"`
 	Summary    string `json:"summary"`
+	Cover      string `json:"cover"`
 	Slug       string `json:"slug"`
 	CategoryID uint   `json:"category_id"`
 	TagIDs     []uint `json:"tag_ids"`
@@ -37,6 +39,7 @@ type PostResponse struct {
 	Title        string    `json:"title"`
 	Content      string    `json:"content"`
 	Summary      string    `json:"summary"`
+	Cover        string    `json:"cover"`
 	Slug         string    `json:"slug"`
 	CategoryID   uint      `json:"category_id"`
 	Category     string    `json:"category"`

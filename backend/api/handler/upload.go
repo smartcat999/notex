@@ -1,14 +1,12 @@
 package handler
 
 import (
-	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"image"
 	_ "image/gif"
@@ -17,19 +15,23 @@ import (
 	_ "image/png"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/nfnt/resize"
 
 	"notex/config"
 	"notex/pkg/response"
+	"notex/pkg/storage"
 )
 
 type UploadHandler struct {
-	cfg *config.FileStorageConfig
+	storage storage.Storage
+	cfg     *config.FileStorageConfig
 }
 
-func NewUploadHandler(cfg *config.FileStorageConfig) *UploadHandler {
-	return &UploadHandler{cfg: cfg}
+func NewUploadHandler(storage storage.Storage, cfg *config.FileStorageConfig) *UploadHandler {
+	return &UploadHandler{
+		storage: storage,
+		cfg:     cfg,
+	}
 }
 
 // UploadResponse 文件上传响应
@@ -45,61 +47,26 @@ type UploadResponse struct {
 func (h *UploadHandler) Upload(c *gin.Context) {
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		response.Error(c, http.StatusBadRequest, "Failed to get file", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get file"})
 		return
 	}
 	defer file.Close()
 
-	// 检查文件大小
-	if header.Size > h.cfg.MaxSize {
-		response.Error(c, http.StatusBadRequest, "File too large", nil)
+	// 使用存储接口上传文件
+	result, err := h.storage.Upload(file, header)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file"})
 		return
 	}
 
-	// 检查文件类型
-	contentType := header.Header.Get("Content-Type")
-	if !h.isAllowedType(contentType) {
-		response.Error(c, http.StatusBadRequest, "File type not allowed", nil)
-		return
-	}
+	// 直接返回上传结果
+	c.JSON(http.StatusOK, result)
+}
 
-	// 创建上传目录
-	uploadPath := filepath.Join(h.cfg.UploadDir, time.Now().Format("2006/01/02"))
-	if err := os.MkdirAll(uploadPath, 0755); err != nil {
-		response.Error(c, http.StatusInternalServerError, "Failed to create upload directory", err)
-		return
-	}
-
-	// 生成文件名
-	ext := filepath.Ext(header.Filename)
-	filename := fmt.Sprintf("%s%s", uuid.New().String(), ext)
-	filePath := filepath.Join(uploadPath, filename)
-
-	// 保存文件
-	if err := h.saveFile(file, filePath); err != nil {
-		response.Error(c, http.StatusInternalServerError, "Failed to save file", err)
-		return
-	}
-
-	// 生成缩略图（如果是图片）
-	var thumbnailURL string
-	if h.isImage(contentType) {
-		if thumbnail, err := h.createThumbnail(filePath); err == nil {
-			thumbnailURL = strings.Replace(thumbnail, h.cfg.UploadDir, h.cfg.URLPrefix, 1)
-		}
-	}
-
-	// 生成响应
-	fileURL := strings.Replace(filePath, h.cfg.UploadDir, h.cfg.URLPrefix, 1)
-	resp := UploadResponse{
-		URL:          fileURL,
-		ThumbnailURL: thumbnailURL,
-		Filename:     header.Filename,
-		Size:         header.Size,
-		Type:         contentType,
-	}
-
-	response.Success(c, "File uploaded successfully", resp)
+// GetUploadConfig 获取上传配置
+func (h *UploadHandler) GetUploadConfig(c *gin.Context) {
+	config := h.storage.GetUploadConfig()
+	response.Success(c, "Upload config retrieved", config)
 }
 
 // isAllowedType 检查文件类型是否允许

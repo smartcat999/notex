@@ -27,6 +27,7 @@ func (s *PostService) CreatePost(req *dto.CreatePostRequest) (*dto.PostResponse,
 		Title:      req.Title,
 		Content:    req.Content,
 		Summary:    req.Summary,
+		Cover:      req.Cover,
 		Slug:       req.Slug,
 		CategoryID: req.CategoryID,
 		Status:     req.Status,
@@ -86,6 +87,9 @@ func (s *PostService) UpdatePost(id uint, req *dto.UpdatePostRequest) (*dto.Post
 	}
 	if req.Summary != "" {
 		post.Summary = req.Summary
+	}
+	if req.Cover != "" {
+		post.Cover = req.Cover
 	}
 	if req.Slug != "" {
 		post.Slug = req.Slug
@@ -166,6 +170,7 @@ func (s *PostService) ListPosts(query *dto.PostListQuery) ([]dto.PostResponse, i
 func (s *PostService) GetRecentPosts(limit int) ([]dto.PostResponse, error) {
 	conditions := map[string]interface{}{
 		"status": "published",
+		"sort":   "newest",
 	}
 	posts, _, err := s.repo.List(1, limit, conditions)
 	if err != nil {
@@ -246,6 +251,7 @@ func (s *PostService) convertToResponse(post *model.Post) (*dto.PostResponse, er
 		Title:        post.Title,
 		Content:      post.Content,
 		Summary:      post.Summary,
+		Cover:        post.Cover,
 		Slug:         post.Slug,
 		CategoryID:   post.CategoryID,
 		Status:       post.Status,

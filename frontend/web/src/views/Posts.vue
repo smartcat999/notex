@@ -55,9 +55,6 @@
         <el-col :span="18">
           <div class="posts-list" v-loading="loading">
             <el-card v-for="post in posts" :key="post.id" class="post-card">
-              <div class="post-cover" v-if="post.cover">
-                <img :src="post.cover" :alt="post.title">
-              </div>
               <div class="post-content">
                 <div class="post-main">
                   <h2 class="post-title">
@@ -80,6 +77,9 @@
                       {{ post.views || 0 }} 次浏览
                     </span>
                   </div>
+                </div>
+                <div class="post-cover" v-if="post.cover">
+                  <img :src="post.cover" :alt="post.title">
                 </div>
               </div>
               <div class="post-footer">
@@ -358,38 +358,45 @@ onMounted(() => {
 <style scoped lang="scss">
 .posts-page {
   max-width: 1200px;
-  margin: 24px auto;
+  margin: 32px auto;
   padding: 0 20px;
 
   .page-header {
-    margin-bottom: 36px;
-    padding: 20px 0;
+    margin-bottom: 40px;
+    padding: 24px 0;
     position: relative;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.98));
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 
     &::after {
       content: '';
       position: absolute;
       bottom: 0;
-      left: 0;
-      right: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
       height: 1px;
       background: linear-gradient(to right, rgba(64, 158, 255, 0), rgba(64, 158, 255, 0.5), rgba(64, 158, 255, 0));
     }
 
     .title-section {
-      margin-bottom: 28px;
+      margin-bottom: 32px;
       text-align: center;
       
       .title-wrapper {
         display: inline-block;
         position: relative;
-        margin-bottom: 12px;
+        margin-bottom: 16px;
 
         h1 {
           margin: 0;
-          font-size: 2.4em;
+          font-size: 2.2em;
           font-weight: 700;
-          color: #2c3e50;
+          background: linear-gradient(120deg, #2c3e50, #3498db);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
           letter-spacing: 0.05em;
           position: relative;
           z-index: 1;
@@ -397,21 +404,24 @@ onMounted(() => {
 
         .title-decoration {
           position: absolute;
-          bottom: 8px;
-          left: -8px;
-          right: -8px;
-          height: 12px;
-          background-color: rgba(64, 158, 255, 0.1);
+          bottom: 12px;
+          left: -12px;
+          right: -12px;
+          height: 16px;
+          background-color: rgba(64, 158, 255, 0.15);
+          border-radius: 8px;
           z-index: 0;
+          transform: skew(-12deg);
         }
       }
 
       .subtitle {
         margin: 0;
-        font-size: 1.15em;
+        font-size: 1.1em;
         color: #5c6b77;
         font-weight: 300;
         letter-spacing: 0.03em;
+        opacity: 0.85;
       }
     }
 
@@ -419,123 +429,199 @@ onMounted(() => {
       display: flex;
       justify-content: center;
       gap: 16px;
-      margin-top: 24px;
+      margin-top: 28px;
+      padding: 0 20px;
 
       .search-input {
-        width: 360px;
+        width: 400px;
+        :deep(.el-input__wrapper) {
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+          border-radius: 8px;
+        }
       }
 
       .el-select {
         width: 140px;
+        :deep(.el-input__wrapper) {
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+          border-radius: 8px;
+        }
       }
     }
   }
 
   .posts-container {
     .posts-list {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-
       .post-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        
+        margin-bottom: 16px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        border-radius: 10px;
+        overflow: hidden;
+        padding: 16px;
+        background: rgba(255, 255, 255, 0.98);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+
         &:hover {
           transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+          background: rgba(255, 255, 255, 1);
 
-        .post-cover {
-          height: 200px;
-          overflow: hidden;
-          border-radius: 8px;
-          margin: -20px -20px 16px;
-
-          img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s ease;
-
-            &:hover {
-              transform: scale(1.05);
-            }
+          .post-cover {
+            transform: perspective(1000px) rotateY(-2deg) translateZ(10px);
+            box-shadow: 6px 6px 16px rgba(0, 0, 0, 0.15);
           }
         }
 
         .post-content {
+          display: flex;
+          align-items: flex-start;
+          gap: 20px;
+
           .post-main {
+            flex: 1;
+            min-width: 0;
+
             .post-title {
-              margin: 0 0 12px;
-              font-size: 1.4em;
+              margin: 0 0 10px;
+              font-size: 1.15em;
               font-weight: 600;
               line-height: 1.4;
 
               a {
                 color: #2c3e50;
                 text-decoration: none;
-                transition: color 0.3s ease;
+                transition: all 0.3s ease;
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
 
                 &:hover {
-                  color: #409eff;
+                  color: var(--el-color-primary);
+                  text-shadow: 0 0 1px rgba(64, 158, 255, 0.15);
                 }
               }
             }
 
             .post-summary {
-              margin: 0 0 16px;
-              color: #5c6b77;
-              font-size: 0.95em;
+              margin: 0 0 12px;
+              color: #606266;
+              font-size: 0.9em;
               line-height: 1.6;
               display: -webkit-box;
-              -webkit-line-clamp: 3;
+              -webkit-line-clamp: 2;
               -webkit-box-orient: vertical;
               overflow: hidden;
+              opacity: 0.9;
             }
 
             .post-meta {
               display: flex;
-              gap: 16px;
+              gap: 12px;
               align-items: center;
-              margin-bottom: 16px;
-              font-size: 0.9em;
-              color: #8c9ba5;
+              flex-wrap: wrap;
+              font-size: 0.82em;
+              color: #909399;
 
               span {
                 display: flex;
                 align-items: center;
                 gap: 4px;
+                padding: 2px 0;
 
                 .el-icon {
                   font-size: 1.1em;
+                  opacity: 0.85;
                 }
 
                 &.post-category {
-                  color: #409eff;
+                  color: var(--el-color-primary);
                   font-weight: 500;
+                  background: rgba(64, 158, 255, 0.08);
+                  padding: 2px 8px;
+                  border-radius: 4px;
+                  transition: all 0.3s ease;
+
+                  &:hover {
+                    background: rgba(64, 158, 255, 0.12);
+                  }
                 }
               }
             }
           }
 
-          .post-footer {
-            margin-top: 16px;
-            padding-top: 16px;
-            border-top: 1px solid #ebeef5;
+          .post-cover {
+            flex: 0 0 360px;
+            height: 220px;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            position: relative;
+            transform: perspective(1000px) rotateY(0deg) translateZ(0);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            
+            &::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              background: linear-gradient(
+                to bottom,
+                rgba(0, 0, 0, 0),
+                rgba(0, 0, 0, 0.02) 40%,
+                rgba(0, 0, 0, 0.08)
+              );
+              z-index: 1;
+              pointer-events: none;
+              transition: opacity 0.3s ease;
+            }
 
-            .post-tags {
-              display: flex;
-              flex-wrap: wrap;
-              gap: 8px;
+            img {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+              transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            }
 
-              .el-tag {
-                border-radius: 4px;
-                cursor: pointer;
-                transition: all 0.3s ease;
+            &:hover {
+              &::before {
+                opacity: 0.7;
+              }
+              
+              img {
+                transform: scale(1.05);
+              }
+            }
+          }
+        }
 
-                &:hover {
-                  transform: translateY(-1px);
-                }
+        .post-footer {
+          margin-top: 14px;
+          padding-top: 14px;
+          border-top: 1px solid rgba(0, 0, 0, 0.04);
+
+          .post-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+
+            .el-tag {
+              border-radius: 4px;
+              font-size: 0.8em;
+              padding: 0 8px;
+              height: 22px;
+              line-height: 20px;
+              background: rgba(var(--el-color-primary-rgb), 0.06);
+              border: none;
+              color: var(--el-color-primary);
+              transition: all 0.3s ease;
+
+              &:hover {
+                background: rgba(var(--el-color-primary-rgb), 0.1);
+                transform: translateY(-1px);
               }
             }
           }
@@ -543,9 +629,23 @@ onMounted(() => {
       }
 
       .pagination {
-        margin-top: 24px;
+        margin-top: 32px;
         display: flex;
         justify-content: center;
+        
+        :deep(.el-pagination) {
+          --el-pagination-button-bg-color: rgba(255, 255, 255, 0.9);
+          --el-pagination-hover-color: var(--el-color-primary);
+          
+          .el-pager li {
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            
+            &:hover, &.is-active {
+              box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            }
+          }
+        }
       }
     }
   }
@@ -553,11 +653,11 @@ onMounted(() => {
   .sidebar {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 24px;
     position: sticky;
-    top: 20px;
+    top: 24px;
     height: fit-content;
-    transition: transform 0.2s ease;
+    transition: all 0.3s ease;
     will-change: transform;
     z-index: 1;
 
@@ -566,11 +666,28 @@ onMounted(() => {
     }
 
     .widget {
+      border-radius: 10px;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+      background: rgba(255, 255, 255, 0.98);
+      overflow: hidden;
+      transition: all 0.3s ease;
+
+      &:hover {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        background: rgba(255, 255, 255, 1);
+      }
+
       .widget-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        background: linear-gradient(to right, rgba(64, 158, 255, 0.05), rgba(64, 158, 255, 0.02));
+
         h3 {
           margin: 0;
-          font-size: 1.1em;
+          font-size: 1.05em;
           font-weight: 600;
+          color: #2c3e50;
         }
       }
     }
@@ -578,44 +695,97 @@ onMounted(() => {
     .tags-cloud {
       display: flex;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 10px;
+      padding: 16px;
 
       .tag-item {
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: none;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        border-radius: 6px;
 
         &:hover {
-          transform: translateY(-1px);
+          transform: translateY(-2px) scale(1.05);
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
         }
       }
     }
+  }
+}
 
-    .archive-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-
-      li {
-        a {
-          display: flex;
-          justify-content: space-between;
-          padding: 8px 0;
-          color: #606266;
-          text-decoration: none;
-          transition: all 0.3s ease;
-
-          &:hover {
-            color: #409eff;
-            padding-left: 8px;
-          }
-
-          .count {
-            color: #909399;
-          }
+// 响应式布局优化
+@media (max-width: 768px) {
+  .posts-page {
+    margin: 20px auto;
+    
+    .page-header {
+      margin-bottom: 24px;
+      padding: 16px 0;
+      
+      .title-section {
+        .title-wrapper h1 {
+          font-size: 2em;
         }
+        
+        .subtitle {
+          font-size: 1em;
+        }
+      }
+      
+      .header-actions {
+        flex-direction: column;
+        gap: 12px;
+        
+        .search-input {
+          width: 100%;
+        }
+        
+        .el-select {
+          width: 100%;
+        }
+      }
+    }
+    
+    .posts-list {
+      .post-card {
+        padding: 20px;
+        
+        .post-content {
+          flex-direction: column;
+          gap: 20px;
 
-        &:not(:last-child) {
-          border-bottom: 1px solid #ebeef5;
+          .post-cover {
+            order: -1;
+            flex: none;
+            width: calc(100% + 40px);
+            height: 200px;
+            margin: -20px -20px 0;
+            border-radius: 16px 16px 0 0;
+            box-shadow: none;
+            
+            &:hover {
+              transform: none;
+              box-shadow: none;
+            }
+          }
+          
+          .post-main {
+            .post-title {
+              font-size: 1.2em;
+              margin-bottom: 12px;
+            }
+            
+            .post-summary {
+              font-size: 0.95em;
+              margin-bottom: 12px;
+            }
+            
+            .post-meta {
+              gap: 16px;
+              font-size: 0.9em;
+            }
+          }
         }
       }
     }

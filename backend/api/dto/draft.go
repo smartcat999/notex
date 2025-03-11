@@ -7,6 +7,7 @@ type CreateDraftRequest struct {
 	Title      string `json:"title" binding:"required"`
 	Content    string `json:"content"`
 	Summary    string `json:"summary"`
+	Cover      string `json:"cover"`
 	CategoryID uint   `json:"category_id"`
 	TagIDs     []uint `json:"tag_ids"`
 }
@@ -16,6 +17,7 @@ type UpdateDraftRequest struct {
 	Title      string `json:"title"`
 	Content    string `json:"content"`
 	Summary    string `json:"summary"`
+	Cover      string `json:"cover"`
 	CategoryID uint   `json:"category_id"`
 	TagIDs     []uint `json:"tag_ids"`
 }
@@ -26,6 +28,7 @@ type DraftResponse struct {
 	Title      string    `json:"title"`
 	Content    string    `json:"content"`
 	Summary    string    `json:"summary"`
+	Cover      string    `json:"cover"`
 	CategoryID uint      `json:"category_id"`
 	Category   string    `json:"category"`
 	Tags       []TagInfo `json:"tags"`

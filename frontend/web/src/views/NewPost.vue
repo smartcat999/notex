@@ -58,6 +58,10 @@
           </div>
         </el-form-item>
 
+        <el-form-item label="封面图" prop="cover">
+          <file-upload v-model="form.cover" />
+        </el-form-item>
+
         <el-form-item label="摘要" prop="summary">
           <el-input
             v-model="form.summary"
@@ -159,6 +163,7 @@ import {
 } from '@/api/posts'
 import { createDraft, getDraft, updateDraft, publishDraft } from '@/api/drafts'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
+import FileUpload from '@/components/FileUpload.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -178,6 +183,7 @@ const form = ref({
   tag_ids: [],
   summary: '',
   content: '',
+  cover: '',
 })
 
 // 分类表单数据
@@ -343,6 +349,7 @@ const loadDraft = async (draftId) => {
       tag_ids: draft.tags.map(tag => tag.id),
       summary: draft.summary,
       content: draft.content,
+      cover: draft.cover,
     }
     isEditMode.value = true
   } catch (error) {

@@ -1,34 +1,39 @@
 <template>
   <div class="post-detail-container">
-    <div class="post-header">
-      <h1>{{ post.title }}</h1>
-      <div class="post-meta">
-        <span>
-          <el-icon><Calendar /></el-icon>
-          {{ formatDate(post.created_at) }}
-        </span>
-        <span>
-          <el-icon><View /></el-icon>
-          {{ post.views }}
-        </span>
-        <span>
-          <el-icon><ChatDotRound /></el-icon>
-          {{ post.comment_count }}
-        </span>
-        <span>
-          <el-icon><User /></el-icon>
-          {{ post.author?.username }}
-        </span>
+    <div class="post-header" :class="{ 'no-cover': !post.cover }">
+      <div class="post-cover" v-if="post.cover">
+        <img :src="post.cover" alt="Post Cover">
       </div>
-      <div class="post-tags">
-        <el-tag
-          v-for="tag in post.tags"
-          :key="tag.id"
-          size="small"
-          class="tag"
-        >
-          {{ tag.name }}
-        </el-tag>
+      <div class="header-content">
+        <h1>{{ post.title }}</h1>
+        <div class="post-meta">
+          <span>
+            <el-icon><Calendar /></el-icon>
+            {{ formatDate(post.created_at) }}
+          </span>
+          <span>
+            <el-icon><View /></el-icon>
+            {{ post.views }}
+          </span>
+          <span>
+            <el-icon><ChatDotRound /></el-icon>
+            {{ post.comment_count }}
+          </span>
+          <span>
+            <el-icon><User /></el-icon>
+            {{ post.author?.username }}
+          </span>
+        </div>
+        <div class="post-tags">
+          <el-tag
+            v-for="tag in post.tags"
+            :key="tag.id"
+            size="small"
+            class="tag"
+          >
+            {{ tag.name }}
+          </el-tag>
+        </div>
       </div>
     </div>
 
@@ -278,6 +283,136 @@ onUnmounted(() => {
   color: #24292f;
   line-height: 1.6;
 
+  .post-header {
+    margin-bottom: 32px;
+    text-align: center;
+    position: relative;
+    padding: 0;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.03);
+    overflow: hidden;
+
+    &.no-cover {
+      padding: 32px 24px;
+
+      .header-content {
+        padding: 0;
+      }
+
+      h1 {
+        margin-bottom: 20px;
+      }
+    }
+
+    .post-cover {
+      width: 100%;
+      height: 260px;
+      position: relative;
+      margin-bottom: 20px;
+      overflow: hidden;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.4s ease;
+      }
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 100px;
+        background: linear-gradient(
+          to bottom,
+          rgba(255, 255, 255, 0),
+          rgba(255, 255, 255, 0.85) 75%,
+          rgba(255, 255, 255, 0.98)
+        );
+        pointer-events: none;
+      }
+
+      &:hover img {
+        transform: scale(1.02);
+      }
+    }
+
+    .header-content {
+      padding: 0 24px 24px;
+    }
+
+    h1 {
+      font-size: 1.6em;
+      margin-bottom: 14px;
+      color: #1f2937;
+      font-weight: 600;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+      background: linear-gradient(120deg, #1f2937 0%, #4b5563 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .post-meta {
+      color: #6b7280;
+      font-size: 0.85em;
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+
+      span {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 8px;
+        background: #f9fafb;
+        border-radius: 16px;
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: #f3f4f6;
+          transform: translateY(-1px);
+        }
+
+        .el-icon {
+          font-size: 0.95em;
+          color: var(--el-color-primary);
+        }
+      }
+    }
+
+    .post-tags {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+
+      .tag {
+        margin: 0;
+        padding: 4px 12px;
+        font-size: 0.85em;
+        font-weight: 500;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: none;
+        background: var(--el-color-primary-light-9);
+        color: var(--el-color-primary-dark-2);
+
+        &:hover {
+          transform: translateY(-2px);
+          background: var(--el-color-primary-light-8);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+      }
+    }
+  }
+
   .post-content {
     margin-bottom: 40px;
     background-color: #fff;
@@ -324,100 +459,6 @@ onUnmounted(() => {
       &:active {
         transform: translateY(0);
         background: #e0e0e0;
-      }
-    }
-  }
-}
-
-.post-header {
-  margin-bottom: 40px;
-  text-align: center;
-  position: relative;
-  padding: 30px;
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.04);
-
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, 
-      var(--el-color-primary) 0%,
-      var(--el-color-primary-light-3) 50%,
-      var(--el-color-primary-light-5) 100%
-    );
-    border-radius: 0 0 16px 16px;
-    opacity: 0.6;
-  }
-
-  h1 {
-    font-size: 2em;
-    margin-bottom: 20px;
-    color: #1f2937;
-    font-weight: 700;
-    line-height: 1.3;
-    letter-spacing: -0.02em;
-    background: linear-gradient(120deg, #1f2937 0%, #4b5563 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-  }
-
-  .post-meta {
-    color: #6b7280;
-    font-size: 0.9em;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 16px;
-
-    span {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 4px 10px;
-      background: #f9fafb;
-      border-radius: 20px;
-      transition: all 0.3s ease;
-
-      &:hover {
-        background: #f3f4f6;
-        transform: translateY(-1px);
-      }
-
-      .el-icon {
-        font-size: 1em;
-        color: var(--el-color-primary);
-      }
-    }
-  }
-
-  .post-tags {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    flex-wrap: wrap;
-
-    .tag {
-      margin: 0;
-      padding: 4px 12px;
-      font-size: 0.85em;
-      font-weight: 500;
-      border-radius: 20px;
-      transition: all 0.3s ease;
-      cursor: pointer;
-      border: none;
-      background: var(--el-color-primary-light-9);
-      color: var(--el-color-primary-dark-2);
-
-      &:hover {
-        transform: translateY(-2px);
-        background: var(--el-color-primary-light-8);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
       }
     }
   }

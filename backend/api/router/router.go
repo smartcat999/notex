@@ -1,11 +1,13 @@
 package router
 
 import (
+	"log"
 	"notex/api/handler"
 	"notex/api/repository"
 	"notex/api/service"
 	"notex/config"
 	"notex/middleware"
+	"notex/pkg/storage"
 
 	"time"
 
@@ -41,6 +43,29 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	postService := service.NewPostService()
 	tagService := service.NewTagService()
 	verificationService := service.NewVerificationService()
+
+	// 初始化存储配置
+	storageConfig := &storage.StorageConfig{
+		Type:          storage.StorageTypeLocal,
+		URLPrefix:     cfg.FileStorage.URLPrefix,
+		MaxSize:       cfg.FileStorage.MaxSize,
+		AllowedTypes:  cfg.FileStorage.AllowedTypes,
+		ThumbnailSize: cfg.FileStorage.ThumbnailSize,
+		LocalConfig: struct {
+			UploadDir string `json:"upload_dir"`
+		}{
+			UploadDir: cfg.FileStorage.UploadDir,
+		},
+	}
+
+	// 创建存储实例
+	storageInstance, err := storage.DefaultFactory.CreateStorage(storageConfig)
+	if err != nil {
+		log.Fatal("Failed to create storage instance:", err)
+	}
+
+	// 创建上传处理器
+	uploadHandler := handler.NewUploadHandler(storageInstance, &cfg.FileStorage)
 
 	// API路由组
 	api := r.Group("/api")
@@ -100,7 +125,6 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 			}
 
 			// 文件上传相关路由
-			uploadHandler := handler.NewUploadHandler(&cfg.FileStorage)
 			upload := authenticated.Group("/upload")
 			{
 				upload.POST("/file", middleware.RequireEditor(), uploadHandler.Upload)

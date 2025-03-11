@@ -118,6 +118,7 @@ func (r *DraftRepository) PublishDraft(draft *model.Draft) (*model.Post, error) 
 		Title:       draft.Title,
 		Content:     draft.Content,
 		Summary:     draft.Summary,
+		Cover:       draft.Cover,
 		CategoryID:  draft.CategoryID,
 		UserID:      draft.UserID,
 		Status:      "published",
