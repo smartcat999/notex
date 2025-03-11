@@ -1,32 +1,43 @@
 <template>
   <div class="markdown-editor">
     <div class="editor-toolbar">
-      <el-button-group>
-        <el-button @click="insertMarkdown('**', '**')" size="small">
-          <el-icon><Edit /></el-icon>
-        </el-button>
-        <el-button @click="insertMarkdown('*', '*')" size="small">
-          <el-icon><EditPen /></el-icon>
-        </el-button>
-        <el-button @click="insertMarkdown('# ')" size="small">
-          <el-icon><Document /></el-icon>
-        </el-button>
-        <el-button @click="insertMarkdown('> ')" size="small">
-          <el-icon><ChatDotRound /></el-icon>
-        </el-button>
-        <el-button @click="insertMarkdown('```\n', '\n```')" size="small">
-          <el-icon><Monitor /></el-icon>
-        </el-button>
-        <el-button @click="insertMarkdown('- ')" size="small">
-          <el-icon><List /></el-icon>
-        </el-button>
-        <el-button @click="insertMarkdown('1. ')" size="small">
-          <el-icon><Sort /></el-icon>
-        </el-button>
-      </el-button-group>
+      <div class="toolbar-left">
+        <el-button-group>
+          <el-button @click="insertMarkdown('**', '**')" size="small">
+            <el-icon><Edit /></el-icon>
+          </el-button>
+          <el-button @click="insertMarkdown('*', '*')" size="small">
+            <el-icon><EditPen /></el-icon>
+          </el-button>
+          <el-button @click="insertMarkdown('# ')" size="small">
+            <el-icon><Document /></el-icon>
+          </el-button>
+          <el-button @click="insertMarkdown('> ')" size="small">
+            <el-icon><ChatDotRound /></el-icon>
+          </el-button>
+          <el-button @click="insertMarkdown('```\n', '\n```')" size="small">
+            <el-icon><Monitor /></el-icon>
+          </el-button>
+          <el-button @click="insertMarkdown('- ')" size="small">
+            <el-icon><List /></el-icon>
+          </el-button>
+          <el-button @click="insertMarkdown('1. ')" size="small">
+            <el-icon><Sort /></el-icon>
+          </el-button>
+        </el-button-group>
+      </div>
+
+      <div class="toolbar-right">
+        <el-radio-group v-model="viewMode" size="small">
+          <el-radio-button label="edit">编辑</el-radio-button>
+          <el-radio-button label="split">分屏</el-radio-button>
+          <el-radio-button label="preview">预览</el-radio-button>
+        </el-radio-group>
+      </div>
     </div>
-    <div class="editor-container">
-      <div class="editor-section">
+
+    <div class="editor-container" :class="viewMode">
+      <div class="editor-section" v-show="viewMode !== 'preview'">
         <el-input
           v-model="content"
           type="textarea"
@@ -36,7 +47,7 @@
           resize="none"
         />
       </div>
-      <div class="preview-section">
+      <div class="preview-section" v-show="viewMode !== 'edit'">
         <div class="markdown-preview" v-html="renderedContent"></div>
       </div>
     </div>
@@ -44,7 +55,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import 'highlight.js/styles/github.css'
@@ -66,8 +77,8 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:modelValue'])
-
 const content = ref(props.modelValue)
+const viewMode = ref('split') // 默认分屏模式
 
 // 配置 marked
 marked.setOptions({
@@ -123,124 +134,248 @@ watch(() => props.modelValue, (newValue) => {
 <style scoped lang="scss">
 .markdown-editor {
   border: 1px solid #dcdfe6;
-  border-radius: 4px;
+  border-radius: 8px;
   overflow: hidden;
+  background: #fff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
 
   .editor-toolbar {
-    padding: 8px;
+    padding: 12px;
     border-bottom: 1px solid #dcdfe6;
-    background-color: #f5f7fa;
+    background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .toolbar-left {
+      .el-button-group {
+        margin-right: 8px;
+        border-radius: 6px;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+        .el-button {
+          border: 1px solid #e2e8f0;
+          background: #fff;
+          color: #475569;
+          font-size: 14px;
+          height: 32px;
+          padding: 0 12px;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background: #f8fafc;
+            color: var(--el-color-primary);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+          }
+
+          &:active {
+            transform: translateY(0);
+          }
+
+          .el-icon {
+            font-size: 16px;
+          }
+
+          & + .el-button {
+            border-left: none;
+          }
+        }
+      }
+    }
+
+    .toolbar-right {
+      .el-radio-group {
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+    }
   }
 
   .editor-container {
     display: flex;
-    height: 500px;
+    height: calc(100vh - 300px);
+    min-height: 500px;
+    background: #fff;
+
+    &.edit {
+      .editor-section {
+        flex: 1;
+      }
+    }
+
+    &.preview {
+      .preview-section {
+        flex: 1;
+      }
+    }
+
+    &.split {
+      .editor-section,
+      .preview-section {
+        flex: 0 0 50%;
+      }
+    }
 
     .editor-section {
-      flex: 1;
-      border-right: 1px solid #dcdfe6;
-      overflow: hidden;
+      border-right: 1px solid #e2e8f0;
+      background: #fafafa;
+      position: relative;
+
+      &::before {
+        content: 'Markdown';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 4px 16px;
+        background: #f1f5f9;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 500;
+        border-bottom: 1px solid #e2e8f0;
+      }
 
       :deep(.el-textarea__inner) {
         height: 100%;
         border: none;
         border-radius: 0;
         resize: none;
-        font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+        font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', monospace;
         font-size: 14px;
         line-height: 1.6;
-        padding: 16px;
+        padding: 40px 16px 16px;
+        color: #334155;
+        background: #fafafa;
+        
+        &:focus {
+          box-shadow: none;
+        }
+
+        &::placeholder {
+          color: #94a3b8;
+        }
       }
     }
 
     .preview-section {
-      flex: 1;
-      padding: 16px;
+      padding: 40px 24px 24px;
       overflow-y: auto;
-      background-color: #fff;
+      background: #fff;
+      position: relative;
+
+      &::before {
+        content: '预览';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        padding: 4px 16px;
+        background: #f8fafc;
+        color: #64748b;
+        font-size: 12px;
+        font-weight: 500;
+        border-bottom: 1px solid #e2e8f0;
+      }
 
       .markdown-preview {
         font-size: 14px;
         line-height: 1.6;
+        color: #334155;
+        max-width: 100%;
 
         :deep(h1) {
           font-size: 2em;
-          margin-bottom: 0.5em;
+          margin: 1em 0 0.5em;
           padding-bottom: 0.3em;
-          border-bottom: 1px solid #eaecef;
+          border-bottom: 1px solid #e2e8f0;
         }
 
         :deep(h2) {
           font-size: 1.5em;
-          margin-bottom: 0.5em;
+          margin: 1em 0 0.5em;
           padding-bottom: 0.3em;
-          border-bottom: 1px solid #eaecef;
+          border-bottom: 1px solid #e2e8f0;
         }
 
         :deep(h3) {
           font-size: 1.25em;
-          margin-bottom: 0.5em;
+          margin: 1em 0 0.5em;
         }
 
         :deep(p) {
-          margin-bottom: 1em;
+          margin: 1em 0;
+          line-height: 1.7;
         }
 
         :deep(ul), :deep(ol) {
           padding-left: 2em;
-          margin-bottom: 1em;
+          margin: 1em 0;
         }
 
         :deep(li) {
-          margin-bottom: 0.5em;
+          margin: 0.5em 0;
         }
 
         :deep(blockquote) {
-          margin: 0;
-          padding: 0 1em;
-          color: #6a737d;
-          border-left: 0.25em solid #dfe2e5;
+          margin: 1em 0;
+          padding: 0.5em 1em;
+          color: #475569;
+          border-left: 4px solid #e2e8f0;
+          background: #f8fafc;
+          border-radius: 4px;
         }
 
         :deep(pre) {
-          padding: 16px;
-          overflow: auto;
-          background-color: #f6f8fa;
-          border-radius: 4px;
-          margin-bottom: 1em;
+          margin: 1em 0;
+          padding: 1em;
+          background: #1e293b;
+          border-radius: 6px;
+          overflow-x: auto;
+          
+          code {
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            line-height: 1.5;
+          }
         }
 
-        :deep(code) {
+        :deep(code):not(pre code) {
           padding: 0.2em 0.4em;
-          margin: 0;
-          font-size: 85%;
-          background-color: rgba(27, 31, 35, 0.05);
-          border-radius: 3px;
+          margin: 0 0.2em;
+          font-size: 0.9em;
+          background: #f1f5f9;
+          border-radius: 4px;
+          color: #ef4444;
         }
 
         :deep(img) {
           max-width: 100%;
-          box-sizing: border-box;
+          border-radius: 8px;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
 
         :deep(table) {
-          border-spacing: 0;
-          border-collapse: collapse;
-          margin-bottom: 1em;
           width: 100%;
+          margin: 1em 0;
+          border-collapse: collapse;
 
           th, td {
-            padding: 6px 13px;
-            border: 1px solid #dfe2e5;
+            padding: 0.75em 1em;
+            border: 1px solid #e2e8f0;
           }
 
-          tr {
-            background-color: #fff;
-            border-top: 1px solid #c6cbd1;
+          th {
+            background: #f8fafc;
+            font-weight: 600;
+          }
 
-            &:nth-child(2n) {
-              background-color: #f6f8fa;
-            }
+          tr:nth-child(even) {
+            background: #f8fafc;
           }
         }
       }
