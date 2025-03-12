@@ -314,6 +314,8 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss">
+@import '@/styles/post-content.scss';
+
 .post-detail-container {
   max-width: 900px;
   margin: 0 auto;

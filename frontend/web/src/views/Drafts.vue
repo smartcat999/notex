@@ -24,6 +24,10 @@
               <a :href="draft.url" target="_blank">{{ draft.title || '无标题草稿' }}</a>
             </h2>
             <div class="draft-actions">
+              <el-button type="info" plain @click="handlePreview(draft)">
+                <el-icon><View /></el-icon>
+                预览
+              </el-button>
               <el-button type="primary" @click="handleEdit(draft)">编辑</el-button>
               <el-button type="success" @click="handlePublish(draft)">发布</el-button>
               <el-button type="danger" @click="handleDelete(draft)">删除</el-button>
@@ -59,6 +63,63 @@
         @current-change="handleCurrentChange"
       />
     </div>
+
+    <!-- 预览对话框 -->
+    <el-dialog
+      v-model="previewDialogVisible"
+      title="文章预览"
+      width="800px"
+      :close-on-click-modal="false"
+      class="preview-dialog"
+      destroy-on-close
+      fullscreen
+    >
+      <div class="preview-content">
+        <div class="post-header" :class="{ 'no-cover': !currentDraft?.cover }">
+          <div class="post-cover" v-if="currentDraft?.cover">
+            <img :src="currentDraft.cover" :alt="currentDraft.title">
+          </div>
+          <div class="header-content">
+            <h1>{{ currentDraft?.title || '无标题草稿' }}</h1>
+            <div class="post-meta">
+              <span>
+                <el-icon><Calendar /></el-icon>
+                {{ formatDate(currentDraft?.updated_at) }}
+              </span>
+              <span>
+                <el-icon><View /></el-icon>
+                0
+              </span>
+              <span>
+                <el-icon><ChatDotRound /></el-icon>
+                0
+              </span>
+            </div>
+            <!-- 作者信息 -->
+            <AuthorCard :author="userStore.user" />
+            <div v-if="currentDraft?.tags?.length" class="post-tags">
+              <el-tag
+                v-for="tag in currentDraft.tags"
+                :key="tag.id"
+                size="small"
+                class="tag"
+              >
+                {{ tag.name }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+
+        <div class="post-content markdown-body">
+          <MarkdownPreview :content="currentDraft?.content" />
+        </div>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="previewDialogVisible = false">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -66,10 +127,15 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search } from '@element-plus/icons-vue'
-import { getDrafts, deleteDraft, publishDraft } from '@/api/drafts'
+import { Search, View, Calendar, ChatDotRound } from '@element-plus/icons-vue'
+import { getDrafts, deleteDraft, publishDraft, getDraft } from '@/api/drafts'
+import { formatDate } from '@/utils/date'
+import { useUserStore } from '@/stores/user'
+import MarkdownPreview from '@/components/MarkdownPreview.vue'
+import AuthorCard from '@/components/AuthorCard.vue'
 
 const router = useRouter()
+const userStore = useUserStore()
 const loading = ref(false)
 const drafts = ref([])
 const total = ref(0)
@@ -77,6 +143,8 @@ const currentPage = ref(1)
 const pageSize = ref(10)
 const searchQuery = ref('')
 const searchTimeout = ref(null)
+const previewDialogVisible = ref(false)
+const currentDraft = ref(null)
 
 const fetchDrafts = async () => {
   loading.value = true
@@ -161,15 +229,15 @@ const handleDelete = async (draft) => {
   }
 }
 
-const formatDate = (date) => {
-  if (!date) return ''
-  return new Date(date).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+const handlePreview = async (draft) => {
+  try {
+    const draftDetail = await getDraft(draft.id)
+    currentDraft.value = draftDetail
+    previewDialogVisible.value = true
+  } catch (error) {
+    console.error('Failed to load draft for preview:', error)
+    ElMessage.error('加载预览失败')
+  }
 }
 
 onMounted(() => {
@@ -177,7 +245,9 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+@import '@/styles/post-content.scss';
+
 .drafts-container {
   max-width: 900px;
   margin: 32px auto;
@@ -454,6 +524,162 @@ onMounted(() => {
   .draft-actions {
     width: 100%;
     justify-content: flex-end;
+  }
+}
+
+.preview-dialog {
+  :deep(.el-dialog__body) {
+    padding: 0;
+  }
+
+  .preview-content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 20px;
+
+    .post-header {
+      position: relative;
+      margin-bottom: 40px;
+      text-align: center;
+      padding: 40px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(43, 88, 118, 0.04) 0%, rgba(78, 67, 118, 0.04) 100%);
+      backdrop-filter: blur(8px);
+      transition: all 0.3s ease;
+
+      &.no-cover {
+        padding-top: 0;
+
+        .header-content {
+          margin-top: 0;
+        }
+      }
+
+      .post-cover {
+        margin: -40px -40px 30px;
+        height: 360px;
+        border-radius: 16px 16px 0 0;
+        overflow: hidden;
+        position: relative;
+
+        &::after {
+          content: '';
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: 160px;
+          background: linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.6));
+        }
+
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+      }
+
+      .header-content {
+        position: relative;
+        z-index: 1;
+
+        h1 {
+          font-size: 2.4em;
+          font-weight: 700;
+          color: #1a202c;
+          margin: 0 0 20px;
+          line-height: 1.3;
+          letter-spacing: -0.02em;
+          background: linear-gradient(135deg, #2B5876 0%, #4E4376 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+      }
+
+      .post-meta {
+        width: 100%;
+        color: #6b7280;
+        font-size: 0.9em;
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 16px;
+
+        span {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 12px;
+          background: rgba(43, 88, 118, 0.06);
+          border-radius: 20px;
+          transition: all 0.3s ease;
+
+          &:hover {
+            background: rgba(43, 88, 118, 0.1);
+            transform: translateY(-1px);
+          }
+
+          .el-icon {
+            font-size: 1.1em;
+            color: #2B5876;
+          }
+        }
+      }
+
+      .post-tags {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 20px;
+
+        .tag {
+          background: rgba(43, 88, 118, 0.06);
+          border: none;
+          color: #2B5876;
+          transition: all 0.3s ease;
+          font-size: 0.85em;
+          padding: 0 12px;
+          height: 24px;
+          line-height: 24px;
+          border-radius: 12px;
+
+          &:hover {
+            background: rgba(43, 88, 118, 0.1);
+            transform: translateY(-1px);
+          }
+        }
+      }
+
+      :deep(.author-card) {
+        width: 100%;
+        margin: 0 0 24px;
+        display: flex;
+        justify-content: center;
+        border: none;
+        padding: 0;
+
+        .author-content {
+          background: rgba(43, 88, 118, 0.03);
+          padding: 12px 20px;
+          border-radius: 16px;
+          transition: all 0.3s ease;
+
+          &:hover {
+            background: rgba(43, 88, 118, 0.06);
+            transform: translateY(-1px);
+          }
+        }
+      }
+    }
+
+    .post-content {
+      background: #fff;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    }
   }
 }
 </style> 

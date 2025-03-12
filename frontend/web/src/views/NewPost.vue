@@ -103,43 +103,42 @@
       fullscreen
     >
       <div class="preview-content">
-        <div class="article-header">
-          <h1 class="article-title">{{ form.title }}</h1>
-          <div class="article-meta">
-            <div class="meta-item">
-              <el-icon><Calendar /></el-icon>
-              <span>{{ formatDate(new Date()) }}</span>
+        <div class="post-header" :class="{ 'no-cover': !form.cover }">
+          <div class="post-cover" v-if="form.cover">
+            <img :src="form.cover" :alt="form.title">
+          </div>
+          <div class="header-content">
+            <h1>{{ form.title }}</h1>
+            <div class="post-meta">
+              <span>
+                <el-icon><Calendar /></el-icon>
+                {{ formatDate(new Date()) }}
+              </span>
+              <span>
+                <el-icon><View /></el-icon>
+                0
+              </span>
+              <span>
+                <el-icon><ChatDotRound /></el-icon>
+                0
+              </span>
             </div>
-            <div class="meta-item">
-              <el-icon><User /></el-icon>
-              <span>{{ userStore.user?.username }}</span>
-            </div>
-            <div v-if="form.category_id" class="meta-item">
-              <el-icon><Folder /></el-icon>
-              <span>{{ getCategoryName(form.category_id) }}</span>
+            <!-- 作者信息 -->
+            <AuthorCard :author="userStore.user" />
+            <div v-if="form.tag_ids?.length" class="post-tags">
+              <el-tag
+                v-for="tagId in form.tag_ids"
+                :key="tagId"
+                size="small"
+                class="tag"
+              >
+                {{ getTagName(tagId) }}
+              </el-tag>
             </div>
           </div>
-          <div v-if="form.tag_ids?.length" class="article-tags">
-            <el-tag
-              v-for="tagId in form.tag_ids"
-              :key="tagId"
-              size="small"
-              class="tag-item"
-            >
-              {{ getTagName(tagId) }}
-            </el-tag>
-          </div>
-        </div>
-        
-        <div v-if="form.cover" class="article-cover">
-          <img :src="form.cover" :alt="form.title">
         </div>
 
-        <div v-if="form.summary" class="article-summary">
-          {{ form.summary }}
-        </div>
-
-        <div class="article-content markdown-body">
+        <div class="post-content markdown-body">
           <MarkdownPreview :content="form.content" />
         </div>
       </div>
@@ -235,7 +234,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, View, Calendar, User, Folder } from '@element-plus/icons-vue'
+import { Plus, View, Calendar, User, Folder, ChatDotRound } from '@element-plus/icons-vue'
 import { 
   getCategories, 
   getTags, 
@@ -249,6 +248,7 @@ import MarkdownPreview from '@/components/MarkdownPreview.vue'
 import FileUpload from '@/components/FileUpload.vue'
 import { formatDate } from '@/utils/date'
 import { useUserStore } from '@/stores/user'
+import AuthorCard from '@/components/AuthorCard.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -562,6 +562,8 @@ const handlePreview = () => {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/post-content.scss';
+
 .new-post-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -849,84 +851,60 @@ const handlePreview = () => {
   }
 
   .preview-content {
-    max-width: 800px;
+    max-width: 900px;
     margin: 0 auto;
     padding: 40px 20px;
 
-    .article-header {
-      text-align: center;
-      margin-bottom: 32px;
+    .post-meta {
+      width: 100%;
+      color: #6b7280;
+      font-size: 0.9em;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 16px;
 
-      .article-title {
-        font-size: 2.4em;
-        font-weight: 700;
-        color: var(--el-text-color-primary);
-        margin: 0 0 20px;
-        line-height: 1.4;
-      }
-
-      .article-meta {
-        display: flex;
-        justify-content: center;
-        gap: 24px;
-        margin-bottom: 16px;
-        color: var(--el-text-color-secondary);
-        font-size: 0.9em;
-
-        .meta-item {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-
-          .el-icon {
-            font-size: 1.1em;
-          }
-        }
-      }
-
-      .article-tags {
-        display: flex;
-        justify-content: center;
+      span {
+        display: inline-flex;
+        align-items: center;
         gap: 8px;
-        flex-wrap: wrap;
+        padding: 6px 12px;
+        background: rgba(43, 88, 118, 0.06);
+        border-radius: 20px;
+        transition: all 0.3s ease;
 
-        .tag-item {
-          border-radius: 4px;
-          padding: 0 12px;
-          height: 24px;
-          line-height: 24px;
-          font-size: 12px;
+        &:hover {
+          background: rgba(43, 88, 118, 0.1);
+          transform: translateY(-1px);
+        }
+
+        .el-icon {
+          font-size: 1.1em;
+          color: #2B5876;
         }
       }
     }
 
-    .article-cover {
-      margin-bottom: 32px;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    :deep(.author-card) {
+      width: 100%;
+      margin: 0 0 24px;
+      display: flex;
+      justify-content: center;
+      border: none;
+      padding: 0;
 
-      img {
-        width: 100%;
-        height: auto;
-        display: block;
+      .author-content {
+        background: rgba(43, 88, 118, 0.03);
+        padding: 12px 20px;
+        border-radius: 16px;
+        transition: all 0.3s ease;
+
+        &:hover {
+          background: rgba(43, 88, 118, 0.06);
+          transform: translateY(-1px);
+        }
       }
-    }
-
-    .article-summary {
-      font-size: 1.1em;
-      color: var(--el-text-color-secondary);
-      line-height: 1.8;
-      padding: 20px;
-      background: var(--el-fill-color-lighter);
-      border-radius: 8px;
-      margin-bottom: 32px;
-    }
-
-    .article-content {
-      font-size: 1.1em;
-      line-height: 1.8;
-      color: var(--el-text-color-primary);
     }
   }
 }
