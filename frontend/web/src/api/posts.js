@@ -203,7 +203,11 @@ export function getUserPosts(params) {
   return request({
     url: '/posts',
     method: 'get',
-    params
+    params: {
+      page: params.page,
+      per_page: params.per_page,
+      user: 'current'  // 使用 current 表示当前用户
+    }
   })
 }
 

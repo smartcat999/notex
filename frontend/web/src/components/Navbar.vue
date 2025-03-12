@@ -22,6 +22,7 @@
 
       <div class="nav-right">
         <el-button 
+          v-if="userStore.user?.role !== 'user'"
           type="primary" 
           class="write-btn"
           @click="$router.push('/posts/new')"
@@ -42,7 +43,10 @@
                 <el-icon><User /></el-icon>
                 个人中心
               </el-dropdown-item>
-              <el-dropdown-item @click="$router.push('/drafts')">
+              <el-dropdown-item 
+                v-if="userStore.user?.role !== 'user'"
+                @click="$router.push('/drafts')"
+              >
                 <el-icon><Document /></el-icon>
                 草稿箱
               </el-dropdown-item>
@@ -115,14 +119,21 @@ const handleLogout = async () => {
   left: 0;
   right: 0;
   height: 64px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+  box-shadow: 
+    0 1px 3px rgba(0, 0, 0, 0.02),
+    0 1px 2px rgba(0, 0, 0, 0.04);
   z-index: 100;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &:hover {
-    background: rgba(255, 255, 255, 0.98);
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 
+      0 2px 4px rgba(0, 0, 0, 0.02),
+      0 2px 3px rgba(0, 0, 0, 0.04);
   }
 
   .navbar-container {
@@ -265,21 +276,100 @@ const handleLogout = async () => {
   }
 }
 
-:deep(.el-dropdown-menu__item) {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  font-size: 0.95em;
+:deep(.el-dropdown-menu) {
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(8px);
+  box-shadow: 
+    0px 10px 38px -10px rgba(22, 23, 24, 0.35),
+    0px 10px 20px -15px rgba(22, 23, 24, 0.2);
+  transform-origin: top right;
+  animation: dropdown-in 0.1s ease;
+  min-width: 220px;
   
-  .el-icon {
-    font-size: 1.15em;
-    margin-right: 2px;
+  @keyframes dropdown-in {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  .el-dropdown-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 6px;
+    margin: 1px 0;
+    color: var(--slate-12, #1f2937);
+    font-weight: 450;
+    line-height: 1.4;
+    transition: all 0.15s ease;
+    position: relative;
+    user-select: none;
+    
+    .el-icon {
+      font-size: 16px;
+      color: var(--slate-11, #6b7280);
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &:hover {
+      background: rgba(0, 0, 0, 0.04);
+      color: var(--slate-12, #1f2937);
+      
+      .el-icon {
+        color: var(--slate-12, #1f2937);
+      }
+    }
+
+    &:active {
+      background: rgba(0, 0, 0, 0.06);
+    }
+
+    &.is-disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      
+      &:hover {
+        background: transparent;
+        color: var(--slate-11, #6b7280);
+        
+        .el-icon {
+          color: var(--slate-11, #6b7280);
+        }
+      }
+    }
   }
 
-  &:hover {
-    background: rgba(43, 88, 118, 0.08);
-    color: #2B5876;
+  .el-dropdown-menu__item--divided {
+    position: relative;
+    margin-top: 6px;
+    padding-top: 6px;
+    
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: rgba(0, 0, 0, 0.06);
+      margin: 0;
+    }
   }
 }
 

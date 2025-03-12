@@ -81,6 +81,10 @@
         <el-form-item>
           <div class="form-actions">
             <el-button plain @click="handleCancel">取消</el-button>
+            <el-button type="info" plain @click="handlePreview">
+              <el-icon><View /></el-icon>
+              预览
+            </el-button>
             <el-button type="primary" @click="handleSubmit">发布</el-button>
             <el-button type="info" plain @click="handleSaveDraft">存为草稿</el-button>
           </div>
@@ -88,21 +92,86 @@
       </el-form>
     </div>
 
+    <!-- 预览对话框 -->
+    <el-dialog
+      v-model="previewDialogVisible"
+      title="文章预览"
+      width="800px"
+      :close-on-click-modal="false"
+      class="preview-dialog"
+      destroy-on-close
+      fullscreen
+    >
+      <div class="preview-content">
+        <div class="article-header">
+          <h1 class="article-title">{{ form.title }}</h1>
+          <div class="article-meta">
+            <div class="meta-item">
+              <el-icon><Calendar /></el-icon>
+              <span>{{ formatDate(new Date()) }}</span>
+            </div>
+            <div class="meta-item">
+              <el-icon><User /></el-icon>
+              <span>{{ userStore.user?.username }}</span>
+            </div>
+            <div v-if="form.category_id" class="meta-item">
+              <el-icon><Folder /></el-icon>
+              <span>{{ getCategoryName(form.category_id) }}</span>
+            </div>
+          </div>
+          <div v-if="form.tag_ids?.length" class="article-tags">
+            <el-tag
+              v-for="tagId in form.tag_ids"
+              :key="tagId"
+              size="small"
+              class="tag-item"
+            >
+              {{ getTagName(tagId) }}
+            </el-tag>
+          </div>
+        </div>
+        
+        <div v-if="form.cover" class="article-cover">
+          <img :src="form.cover" :alt="form.title">
+        </div>
+
+        <div v-if="form.summary" class="article-summary">
+          {{ form.summary }}
+        </div>
+
+        <div class="article-content markdown-body">
+          <MarkdownPreview :content="form.content" />
+        </div>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="previewDialogVisible = false">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <!-- 创建分类对话框 -->
     <el-dialog
       v-model="categoryDialogVisible"
       title="创建分类"
-      width="500px"
+      width="460px"
       :close-on-click-modal="false"
+      class="custom-dialog"
+      destroy-on-close
     >
       <el-form
         ref="categoryFormRef"
         :model="categoryForm"
         :rules="categoryRules"
-        label-width="80px"
+        label-position="top"
       >
         <el-form-item label="名称" prop="name">
-          <el-input v-model="categoryForm.name" placeholder="请输入分类名称" />
+          <el-input 
+            v-model="categoryForm.name" 
+            placeholder="请输入分类名称"
+            maxlength="50"
+            show-word-limit
+          />
         </el-form-item>
         <el-form-item label="描述" prop="description">
           <el-input
@@ -110,16 +179,19 @@
             type="textarea"
             :rows="3"
             placeholder="请输入分类描述"
+            maxlength="200"
+            show-word-limit
+            resize="none"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <span class="dialog-footer">
+        <div class="dialog-footer">
           <el-button @click="categoryDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="handleCreateCategory">
-            确认
+            创建分类
           </el-button>
-        </span>
+        </div>
       </template>
     </el-dialog>
 
@@ -127,26 +199,33 @@
     <el-dialog
       v-model="tagDialogVisible"
       title="创建标签"
-      width="500px"
+      width="460px"
       :close-on-click-modal="false"
+      class="custom-dialog"
+      destroy-on-close
     >
       <el-form
         ref="tagFormRef"
         :model="tagForm"
         :rules="tagRules"
-        label-width="80px"
+        label-position="top"
       >
         <el-form-item label="名称" prop="name">
-          <el-input v-model="tagForm.name" placeholder="请输入标签名称" />
+          <el-input 
+            v-model="tagForm.name" 
+            placeholder="请输入标签名称"
+            maxlength="30"
+            show-word-limit
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <span class="dialog-footer">
+        <div class="dialog-footer">
           <el-button @click="tagDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="handleCreateTag">
-            确认
+            创建标签
           </el-button>
-        </span>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -156,7 +235,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, View, Calendar, User, Folder } from '@element-plus/icons-vue'
 import { 
   getCategories, 
   getTags, 
@@ -166,7 +245,10 @@ import {
 } from '@/api/posts'
 import { createDraft, getDraft, updateDraft, publishDraft } from '@/api/drafts'
 import MarkdownEditor from '@/components/MarkdownEditor.vue'
+import MarkdownPreview from '@/components/MarkdownPreview.vue'
 import FileUpload from '@/components/FileUpload.vue'
+import { formatDate } from '@/utils/date'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
 const route = useRoute()
@@ -180,6 +262,9 @@ const tagDialogVisible = ref(false)
 const isEditMode = ref(false)
 const hasChanges = ref(false)
 const autoSaveTimer = ref(null)
+const previewDialogVisible = ref(false)
+
+const userStore = useUserStore()
 
 // 文章表单数据
 const form = ref({
@@ -457,6 +542,23 @@ const loadDraft = async (draftId) => {
     router.push('/drafts')
   }
 }
+
+// 获取分类名称
+const getCategoryName = (categoryId) => {
+  const category = categories.value.find(c => c.id === categoryId)
+  return category ? category.name : ''
+}
+
+// 获取标签名称
+const getTagName = (tagId) => {
+  const tag = tags.value.find(t => t.id === tagId)
+  return tag ? tag.name : ''
+}
+
+// 处理预览
+const handlePreview = () => {
+  previewDialogVisible.value = true
+}
 </script>
 
 <style lang="scss" scoped>
@@ -518,12 +620,12 @@ const loadDraft = async (draftId) => {
         
         &.el-button--primary {
           --el-button-bg-color: transparent;
-          --el-button-border-color: var(--el-color-primary);
-          --el-button-text-color: var(--el-color-primary);
-          --el-button-hover-text-color: var(--el-color-primary);
-          --el-button-hover-bg-color: var(--el-color-primary-light-9);
-          --el-button-hover-border-color: var(--el-color-primary);
-          --el-button-active-bg-color: var(--el-color-primary-light-8);
+          --el-button-border-color: var(--slate-6, #e2e8f0);
+          --el-button-text-color: var(--slate-11, #64748b);
+          --el-button-hover-text-color: var(--slate-12, #1e293b);
+          --el-button-hover-bg-color: var(--slate-3, #f1f5f9);
+          --el-button-hover-border-color: var(--slate-7, #cbd5e1);
+          --el-button-active-bg-color: var(--slate-4, #e2e8f0);
           
           .el-icon {
             margin-right: 4px;
@@ -543,36 +645,52 @@ const loadDraft = async (draftId) => {
         padding: 12px 24px;
         font-weight: 500;
         transition: all 0.3s ease;
+        border-radius: 8px;
         
         &.el-button--primary {
-          --el-button-bg-color: var(--el-color-primary);
-          --el-button-border-color: var(--el-color-primary);
-          --el-button-hover-bg-color: var(--el-color-primary-dark-2);
-          --el-button-hover-border-color: var(--el-color-primary-dark-2);
-          --el-button-active-bg-color: var(--el-color-primary-dark-2);
-          box-shadow: 0 2px 6px rgba(0, 84, 255, 0.15);
+          --el-button-bg-color: transparent;
+          background: linear-gradient(to right, #3B4B66, #2B3A53);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          color: rgba(255, 255, 255, 0.9);
+          box-shadow: 
+            0 1px 2px rgba(0, 0, 0, 0.1),
+            0 1px 1px rgba(0, 0, 0, 0.06);
+          backdrop-filter: blur(8px);
           
           &:hover {
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0, 84, 255, 0.2);
+            background: linear-gradient(to right, #445373, #324161);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 1);
+            box-shadow: 
+              0 4px 12px rgba(0, 0, 0, 0.1),
+              0 2px 4px rgba(0, 0, 0, 0.08);
+          }
+
+          &:active {
+            transform: translateY(0);
+            background: linear-gradient(to right, #324161, #263450);
+            box-shadow: 
+              0 1px 2px rgba(0, 0, 0, 0.1),
+              0 1px 1px rgba(0, 0, 0, 0.06);
           }
         }
         
         &.el-button--info {
           &.is-plain {
             --el-button-bg-color: transparent;
-            --el-button-border-color: var(--el-border-color);
-            --el-button-text-color: var(--el-text-color-regular);
-            --el-button-hover-text-color: var(--el-color-primary);
-            --el-button-hover-bg-color: var(--el-color-primary-light-9);
-            --el-button-hover-border-color: var(--el-color-primary);
+            --el-button-border-color: var(--slate-6, #e2e8f0);
+            --el-button-text-color: var(--slate-11, #64748b);
+            --el-button-hover-text-color: var(--slate-12, #1e293b);
+            --el-button-hover-bg-color: var(--slate-3, #f1f5f9);
+            --el-button-hover-border-color: var(--slate-7, #cbd5e1);
           }
         }
 
         &.is-plain {
-          --el-button-hover-text-color: var(--el-color-primary);
-          --el-button-hover-bg-color: var(--el-color-primary-light-9);
-          --el-button-hover-border-color: var(--el-color-primary);
+          --el-button-hover-text-color: var(--slate-12, #1e293b);
+          --el-button-hover-bg-color: var(--slate-3, #f1f5f9);
+          --el-button-hover-border-color: var(--slate-7, #cbd5e1);
         }
       }
     }
@@ -583,5 +701,233 @@ const loadDraft = async (draftId) => {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
+}
+
+:deep(.custom-dialog) {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 
+    0px 10px 38px -10px rgba(22, 23, 24, 0.35),
+    0px 10px 20px -15px rgba(22, 23, 24, 0.2);
+
+  .el-dialog__header {
+    margin: 0;
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(22, 23, 24, 0.06);
+
+    .el-dialog__title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--slate-12, #1f2937);
+      line-height: 1.4;
+    }
+
+    .el-dialog__close {
+      font-size: 16px;
+      color: var(--slate-11, #6b7280);
+      transition: all 0.2s ease;
+
+      &:hover {
+        color: var(--slate-12, #1f2937);
+        transform: scale(1.1);
+      }
+    }
+  }
+
+  .el-dialog__body {
+    padding: 24px;
+
+    .el-form-item {
+      margin-bottom: 20px;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .el-form-item__label {
+        padding: 0 0 8px;
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--slate-12, #1f2937);
+        line-height: 1.4;
+      }
+
+      .el-input__wrapper,
+      .el-textarea__wrapper {
+        box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+        border-radius: 6px;
+        padding: 8px 12px;
+        transition: all 0.2s ease;
+
+        &:hover {
+          box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+        }
+
+        &.is-focus {
+          box-shadow: 0 0 0 2px var(--el-color-primary);
+        }
+      }
+
+      .el-input__inner,
+      .el-textarea__inner {
+        font-size: 14px;
+        color: var(--slate-12, #1f2937);
+        
+        &::placeholder {
+          color: var(--slate-9, #9ca3af);
+        }
+      }
+
+      .el-input__count {
+        font-size: 12px;
+        color: var(--slate-10, #6b7280);
+        background: transparent;
+      }
+    }
+  }
+
+  .el-dialog__footer {
+    padding: 16px 24px;
+    border-top: 1px solid rgba(22, 23, 24, 0.06);
+    margin-top: 0;
+
+    .dialog-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+
+      .el-button {
+        padding: 8px 16px;
+        font-size: 14px;
+        font-weight: 500;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+
+        &--default {
+          color: var(--slate-11, #6b7280);
+          border-color: var(--slate-7, #e5e7eb);
+          background: transparent;
+
+          &:hover {
+            color: var(--slate-12, #1f2937);
+            border-color: var(--slate-8, #d1d5db);
+            background: var(--slate-3, #f9fafb);
+          }
+
+          &:active {
+            background: var(--slate-4, #f3f4f6);
+          }
+        }
+
+        &--primary {
+          background: var(--slate-3, #f9fafb);
+          border-color: var(--slate-7, #e5e7eb);
+          color: var(--slate-11, #6b7280);
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+          &:hover {
+            background: var(--slate-4, #f3f4f6);
+            border-color: var(--slate-8, #d1d5db);
+            color: var(--slate-12, #1f2937);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+          }
+
+          &:active {
+            transform: translateY(0);
+            background: var(--slate-5, #e5e7eb);
+          }
+        }
+      }
+    }
+  }
+}
+
+.preview-dialog {
+  :deep(.el-dialog__body) {
+    padding: 0;
+  }
+
+  .preview-content {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 40px 20px;
+
+    .article-header {
+      text-align: center;
+      margin-bottom: 32px;
+
+      .article-title {
+        font-size: 2.4em;
+        font-weight: 700;
+        color: var(--el-text-color-primary);
+        margin: 0 0 20px;
+        line-height: 1.4;
+      }
+
+      .article-meta {
+        display: flex;
+        justify-content: center;
+        gap: 24px;
+        margin-bottom: 16px;
+        color: var(--el-text-color-secondary);
+        font-size: 0.9em;
+
+        .meta-item {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+
+          .el-icon {
+            font-size: 1.1em;
+          }
+        }
+      }
+
+      .article-tags {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        flex-wrap: wrap;
+
+        .tag-item {
+          border-radius: 4px;
+          padding: 0 12px;
+          height: 24px;
+          line-height: 24px;
+          font-size: 12px;
+        }
+      }
+    }
+
+    .article-cover {
+      margin-bottom: 32px;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+
+      img {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+    }
+
+    .article-summary {
+      font-size: 1.1em;
+      color: var(--el-text-color-secondary);
+      line-height: 1.8;
+      padding: 20px;
+      background: var(--el-fill-color-lighter);
+      border-radius: 8px;
+      margin-bottom: 32px;
+    }
+
+    .article-content {
+      font-size: 1.1em;
+      line-height: 1.8;
+      color: var(--el-text-color-primary);
+    }
+  }
 }
 </style> 

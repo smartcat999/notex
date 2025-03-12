@@ -48,6 +48,7 @@ declare module 'vue' {
     FileUpload: typeof import('./components/FileUpload.vue')['default']
     FileUploader: typeof import('./components/common/FileUploader.vue')['default']
     MarkdownEditor: typeof import('./components/MarkdownEditor.vue')['default']
+    MarkdownPreview: typeof import('./components/MarkdownPreview.vue')['default']
     Navbar: typeof import('./components/Navbar.vue')['default']
     OSSImage: typeof import('./components/OSSImage.vue')['default']
     PostArchives: typeof import('./components/PostArchives.vue')['default']

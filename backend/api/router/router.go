@@ -124,9 +124,9 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 			// 文件上传相关路由
 			upload := authenticated.Group("/upload")
 			{
-				upload.POST("/file", middleware.RequireEditor(), uploadHandler.Upload)
-				upload.GET("/config", middleware.RequireEditor(), uploadHandler.GetUploadConfig)
-				upload.GET("/credentials", middleware.RequireEditor(), uploadHandler.GetCredentials)
+				upload.POST("/file", uploadHandler.Upload)
+				upload.GET("/config", uploadHandler.GetUploadConfig)
+				upload.GET("/credentials", uploadHandler.GetCredentials)
 			}
 
 			// 文章相关路由（需要认证）

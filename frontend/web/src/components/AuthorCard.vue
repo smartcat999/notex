@@ -36,10 +36,12 @@ export default {
 <style scoped>
 .author-card {
   width: 100%;
-  padding: 16px 0;
+  padding: 0;
   margin: 16px 0;
-  border-top: 1px solid rgba(43, 88, 118, 0.08);
-  border-bottom: 1px solid rgba(43, 88, 118, 0.08);
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  transition: all 0.3s ease;
   display: flex;
   justify-content: center;
 }
@@ -47,24 +49,32 @@ export default {
 .author-content {
   display: flex;
   align-items: center;
-  gap: 16px;
-  width: 100%;
-  max-width: 320px;
-  padding: 0;
-  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(43, 88, 118, 0.03);
+  border-radius: 24px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(43, 88, 118, 0.06);
+    transform: translateY(-1px);
+  }
 }
 
 .author-avatar {
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   overflow: hidden;
-  transition: transform 0.3s ease;
+  transition: all 0.3s ease;
   display: block;
+  box-shadow: 0 2px 8px rgba(43, 88, 118, 0.12);
+  border: 2px solid #fff;
 
   &:hover {
-    transform: scale(1.05);
+    transform: scale(1.05) rotate(5deg);
+    box-shadow: 0 4px 12px rgba(43, 88, 118, 0.2);
   }
 
   img {
@@ -81,28 +91,31 @@ export default {
     justify-content: center;
     background: linear-gradient(135deg, #2B5876, #4E4376);
     color: #fff;
-    font-size: 1.2em;
-    font-weight: 500;
+    font-size: 1.4em;
+    font-weight: 600;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
   }
 }
 
 .author-info {
   flex: 0 1 auto;
   min-width: 0;
-  overflow: hidden;
+  max-width: 150px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 
   .author-name {
     font-size: 0.95em;
     font-weight: 600;
     color: #2c3e50;
     text-decoration: none;
-    margin-bottom: 4px;
+    margin: 0;
     display: block;
-    transition: color 0.3s ease;
+    transition: all 0.3s ease;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-align: left;
 
     &:hover {
       color: #2B5876;
@@ -110,16 +123,7 @@ export default {
   }
 
   .author-bio {
-    color: #606266;
-    font-size: 0.85em;
-    line-height: 1.5;
-    margin: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    text-align: left;
+    display: none;
   }
 }
 </style> 

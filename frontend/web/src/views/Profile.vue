@@ -441,13 +441,14 @@ const fetchUserPosts = async () => {
   try {
     const params = {
       page: currentPage.value,
-      per_page: pageSize.value,
+      per_page: pageSize.value
     }
     const response = await getUserPosts(params)
     userPosts.value = response.items || []
     total.value = response.total || 0
   } catch (error) {
     console.error('Failed to fetch user posts:', error)
+    ElMessage.error('获取文章列表失败')
   }
 }
 
@@ -590,33 +591,91 @@ const handleSave = async () => {
       margin: 0 auto 24px;
       cursor: pointer;
       border-radius: 50%;
-      padding: 4px;
-      background: #f8fafc;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-      
+      overflow: hidden;
+
       :deep(.uploader-component) {
-        .el-avatar {
-          border: 3px solid #ffffff;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        width: 100%;
+        height: 100%;
+
+        .el-upload {
+          width: 100%;
+          height: 100%;
+        }
+
+        .el-upload-dragger {
+          width: 100%;
+          height: 100%;
+          padding: 0;
+          border: none;
+          background: none;
+        }
+      }
+
+      .avatar-content {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+
+        .avatar-image {
+          width: 100%;
+          height: 100%;
+          border: 2px solid #fff;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
           background: linear-gradient(135deg, #f0f5ff, #e6f0ff);
+          transition: all 0.3s ease;
+
+          :deep(.el-avatar__inner) {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f0f5ff, #e6f0ff);
+            font-size: 32px;
+            font-weight: 500;
+            color: #2B5876;
+          }
 
           &:hover {
             border-color: #3699FF;
             box-shadow: 0 6px 16px rgba(54, 153, 255, 0.15);
           }
         }
-      }
 
-      .avatar-hover-mask {
-        background: rgba(54, 153, 255, 0.9);
-        backdrop-filter: blur(2px);
+        .avatar-hover-mask {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: rgba(43, 88, 118, 0.75);
+          backdrop-filter: blur(2px);
+          color: #fff;
+          opacity: 0;
+          transition: all 0.3s ease;
+          gap: 6px;
+          z-index: 1;
 
-        .el-icon {
-          color: #ffffff;
+          .el-icon {
+            font-size: 20px;
+          }
+
+          span {
+            font-size: 12px;
+            font-weight: 500;
+          }
         }
 
-        span {
-          color: #ffffff;
+        &:hover {
+          .avatar-hover-mask {
+            opacity: 1;
+          }
         }
       }
     }
@@ -641,15 +700,17 @@ const handleSave = async () => {
       }
 
       .bio {
-        color: #4a5568;
-        background: #f8fafc;
-        border: 1px solid rgba(0, 0, 0, 0.06);
-        text-shadow: none;
+        color: #64748b;
+        font-size: 0.95em;
+        line-height: 1.6;
+        margin: 8px 0;
+        padding: 0;
+        transition: all 0.3s ease;
+        opacity: 0.85;
         
         &:hover {
-          background: #f0f5ff;
-          border-color: rgba(54, 153, 255, 0.1);
           color: #2c3e50;
+          opacity: 1;
         }
       }
     }
@@ -822,47 +883,95 @@ const handleSave = async () => {
       position: relative;
       width: 100px;
       height: 100px;
-      margin: 0 auto;
+      margin: 0 auto 24px;
       cursor: pointer;
       border-radius: 50%;
       overflow: hidden;
 
-      &:hover .avatar-hover-mask {
-        opacity: 1;
-      }
-
-      .avatar-image {
+      :deep(.uploader-component) {
         width: 100%;
         height: 100%;
-        transition: all 0.3s ease;
-      }
 
-      .avatar-hover-mask {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        color: white;
-        font-size: 0.9em;
+        .el-upload {
+          width: 100%;
+          height: 100%;
+        }
 
-        .el-icon {
-          font-size: 24px;
-          margin-bottom: 4px;
+        .el-upload-dragger {
+          width: 100%;
+          height: 100%;
+          padding: 0;
+          border: none;
+          background: none;
         }
       }
 
-      :deep(.el-upload) {
+      .avatar-content {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
-        display: block;
+
+        .avatar-image {
+          width: 100%;
+          height: 100%;
+          border: 2px solid #fff;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          background: linear-gradient(135deg, #f0f5ff, #e6f0ff);
+          transition: all 0.3s ease;
+
+          :deep(.el-avatar__inner) {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f0f5ff, #e6f0ff);
+            font-size: 32px;
+            font-weight: 500;
+            color: #2B5876;
+          }
+
+          &:hover {
+            border-color: #3699FF;
+            box-shadow: 0 6px 16px rgba(54, 153, 255, 0.15);
+          }
+        }
+
+        .avatar-hover-mask {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: rgba(43, 88, 118, 0.75);
+          backdrop-filter: blur(2px);
+          color: #fff;
+          opacity: 0;
+          transition: all 0.3s ease;
+          gap: 6px;
+          z-index: 1;
+
+          .el-icon {
+            font-size: 20px;
+          }
+
+          span {
+            font-size: 12px;
+            font-weight: 500;
+          }
+        }
+
+        &:hover {
+          .avatar-hover-mask {
+            opacity: 1;
+          }
+        }
       }
     }
 
@@ -1075,73 +1184,5 @@ const handleSave = async () => {
   display: flex;
   justify-content: center;
   margin-top: 20px;
-}
-
-.avatar-upload {
-  position: relative;
-  width: 100px;
-  height: 100px;
-  margin: 0 auto;
-  cursor: pointer;
-
-  :deep(.uploader-component) {
-    width: 100%;
-    height: 100%;
-    display: block;
-
-    .file-uploader {
-      width: 100%;
-      height: 100%;
-    }
-  }
-
-  .avatar-content {
-    position: relative;
-    width: 100%;
-    height: 100%;
-  }
-
-  .avatar-image {
-    width: 100%;
-    height: 100%;
-    transition: all 0.3s ease;
-    border-radius: 50%;
-  }
-
-  .avatar-hover-mask {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    color: white;
-    border-radius: 50%;
-
-    .el-icon {
-      font-size: 24px;
-      margin-bottom: 4px;
-    }
-
-    span {
-      font-size: 12px;
-    }
-  }
-
-  &:hover {
-    .avatar-hover-mask {
-      opacity: 1;
-    }
-
-    .avatar-image {
-      transform: scale(1.05);
-    }
-  }
 }
 </style> 
