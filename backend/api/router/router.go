@@ -33,8 +33,10 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	r.Use(middleware.IPRateLimit())  // IP限流
 	r.Use(middleware.APIRateLimit()) // API限流
 
-	// 静态文件服务
-	r.Static(cfg.FileStorage.URLPrefix, cfg.FileStorage.UploadDir)
+	// 静态文件服务（当配置了本地存储路径和URL前缀时）
+	if cfg.Storage.Local.URLPrefix != "" && cfg.Storage.Local.UploadDir != "" {
+		r.Static(cfg.Storage.Local.URLPrefix, cfg.Storage.Local.UploadDir)
+	}
 
 	adminService := service.NewAdminService()
 	authService := service.NewAuthService()
@@ -44,28 +46,14 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	tagService := service.NewTagService()
 	verificationService := service.NewVerificationService()
 
-	// 初始化存储配置
-	storageConfig := &storage.StorageConfig{
-		Type:          storage.StorageTypeLocal,
-		URLPrefix:     cfg.FileStorage.URLPrefix,
-		MaxSize:       cfg.FileStorage.MaxSize,
-		AllowedTypes:  cfg.FileStorage.AllowedTypes,
-		ThumbnailSize: cfg.FileStorage.ThumbnailSize,
-		LocalConfig: struct {
-			UploadDir string `json:"upload_dir"`
-		}{
-			UploadDir: cfg.FileStorage.UploadDir,
-		},
-	}
-
 	// 创建存储实例
-	storageInstance, err := storage.DefaultFactory.CreateStorage(storageConfig)
+	storageInstance, err := storage.DefaultFactory.CreateStorage(&cfg.Storage)
 	if err != nil {
 		log.Fatal("Failed to create storage instance:", err)
 	}
 
 	// 创建上传处理器
-	uploadHandler := handler.NewUploadHandler(storageInstance, &cfg.FileStorage)
+	uploadHandler := handler.NewUploadHandler(storageInstance, &cfg.Storage)
 
 	// API路由组
 	api := r.Group("/api")
@@ -128,6 +116,8 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 			upload := authenticated.Group("/upload")
 			{
 				upload.POST("/file", middleware.RequireEditor(), uploadHandler.Upload)
+				upload.GET("/config", middleware.RequireEditor(), uploadHandler.GetUploadConfig)
+				upload.GET("/credentials", middleware.RequireEditor(), uploadHandler.GetCredentials)
 			}
 
 			// 文章相关路由（需要认证）

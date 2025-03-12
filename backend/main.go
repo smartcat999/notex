@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"notex/api/router"
@@ -13,11 +14,22 @@ import (
 )
 
 func main() {
+	// 添加命令行参数支持
+	configFlag := flag.String("config", "", "Path to config file (default: config/config.yaml)")
+	flag.Parse()
+
+	// 确定配置文件路径
+	configPath := *configFlag
+	if configPath == "" {
+		configPath = filepath.Join("config", "config.yaml")
+	}
+
 	// 加载配置文件
-	configPath := filepath.Join("config", "config.yaml")
 	if err := config.LoadConfig(configPath); err != nil {
-		log.Printf("Warning: Failed to load config file: %v", err)
+		log.Printf("Warning: Failed to load config file from %s: %v", configPath, err)
 		log.Println("Using default configuration")
+	} else {
+		log.Printf("Loaded configuration from: %s", configPath)
 	}
 
 	cfg := config.GetConfig()

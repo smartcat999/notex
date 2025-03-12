@@ -7,6 +7,8 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
+    AvatarUpload: typeof import('./components/AvatarUpload.vue')['default']
+    AvatarUploader: typeof import('./components/common/AvatarUploader.vue')['default']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
     ElButton: typeof import('element-plus/es')['ElButton']
     ElButtonGroup: typeof import('element-plus/es')['ElButtonGroup']
@@ -41,14 +43,17 @@ declare module 'vue' {
     ElTag: typeof import('element-plus/es')['ElTag']
     ElUpload: typeof import('element-plus/es')['ElUpload']
     FileUpload: typeof import('./components/FileUpload.vue')['default']
+    FileUploader: typeof import('./components/common/FileUploader.vue')['default']
     MarkdownEditor: typeof import('./components/MarkdownEditor.vue')['default']
     Navbar: typeof import('./components/Navbar.vue')['default']
+    OSSImage: typeof import('./components/OSSImage.vue')['default']
     PostArchives: typeof import('./components/PostArchives.vue')['default']
     PostCard: typeof import('./components/PostCard.vue')['default']
     PostHeader: typeof import('./components/PostHeader.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     TagsCloud: typeof import('./components/TagsCloud.vue')['default']
+    UploadManager: typeof import('./components/UploadManager.vue')['default']
   }
   export interface ComponentCustomProperties {
     vLoading: typeof import('element-plus/es')['ElLoadingDirective']

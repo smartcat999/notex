@@ -5,29 +5,48 @@
       <el-col :xs="24" :md="8">
         <el-card class="profile-card">
           <div class="profile-header">
-            <div class="avatar-upload">
-              <el-upload
-                class="avatar-uploader"
-                :action="'/api/upload/file'"
-                :headers="headers"
-                :show-file-list="false"
-                :before-upload="beforeAvatarUpload"
-                :on-success="handleAvatarSuccess"
-                :on-error="handleAvatarError"
-                accept=".jpg,.jpeg,.png,.gif"
+            <div class="avatar-upload" @click="handleAvatarClick">
+              <FileUploader
+                ref="fileUploader"
+                v-model="avatarUrl"
+                :is-avatar="true"
+                :accept="'image/jpeg,image/jpg,image/png,image/gif'"
+                :max-size="2 * 1024 * 1024"
+                :upload-text="'更换头像'"
+                :upload-tip="'支持 jpg、jpeg、png、gif 格式'"
+                class="uploader-component"
               >
-                <el-avatar 
-                  :size="100" 
-                  :src="userStore.user?.avatar"
-                  class="avatar-image"
-                >
-                  {{ userStore.user?.username?.charAt(0) }}
-                </el-avatar>
-                <div class="avatar-hover-mask">
-                  <el-icon><Upload /></el-icon>
-                  <span>更换头像</span>
-                </div>
-              </el-upload>
+                <template #upload-area>
+                  <div class="avatar-content">
+                    <el-avatar 
+                      :size="100" 
+                      :src="userStore.user?.avatar"
+                      class="avatar-image"
+                    >
+                      {{ userStore.user?.username?.charAt(0) }}
+                    </el-avatar>
+                    <div class="avatar-hover-mask">
+                      <el-icon><Upload /></el-icon>
+                      <span>更换头像</span>
+                    </div>
+                  </div>
+                </template>
+                <template #preview="{ url }">
+                  <div class="avatar-content">
+                    <el-avatar 
+                      :size="100" 
+                      :src="url"
+                      class="avatar-image"
+                    >
+                      {{ userStore.user?.username?.charAt(0) }}
+                    </el-avatar>
+                    <div class="avatar-hover-mask">
+                      <el-icon><Upload /></el-icon>
+                      <span>更换头像</span>
+                    </div>
+                  </div>
+                </template>
+              </FileUploader>
             </div>
             <h2>{{ userStore.user?.username }}</h2>
             <p class="email">{{ userStore.user?.email }}</p>
@@ -235,7 +254,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import {
   User,
   Document,
@@ -250,6 +269,8 @@ import { useUserStore } from '@/stores/user'
 import { updateProfile, changePassword, getProfile } from '@/api/auth'
 import { getUserPosts, getUserComments } from '@/api/posts'
 import { ElMessage } from 'element-plus'
+import FileUploader from '@/components/common/FileUploader.vue'
+import axios from 'axios'
 
 const userStore = useUserStore()
 const activeMenu = ref('info')
@@ -319,35 +340,27 @@ const commentPage = ref(1)
 const commentPageSize = ref(10)
 
 // 头像上传相关
-const headers = computed(() => ({
-  'Authorization': `Bearer ${userStore.token}`
-}))
+const avatarUrl = ref(userStore.user?.avatar || '')
 
-const beforeAvatarUpload = (file) => {
-  // 允许的文件类型
-  const allowedTypes = ['image/jpeg', 'image/png', 'image/gif']
-  const isValidType = allowedTypes.includes(file.type)
-  const isLt2M = file.size / 1024 / 1024 < 2
+// 添加 ref
+const fileUploader = ref(null)
 
-  if (!isValidType) {
-    ElMessage.error('只能上传 JPG、PNG 或 GIF 格式的图片！')
-    return false
+// 处理头像点击
+const handleAvatarClick = () => {
+  if (fileUploader.value) {
+    fileUploader.value.triggerUpload()
   }
-  if (!isLt2M) {
-    ElMessage.error('图片大小不能超过 2MB！')
-    return false
-  }
-  return true
 }
 
-const handleAvatarSuccess = async (response) => {
-  if (response && response.url) {
+// 监听头像变化
+watch(avatarUrl, async (newUrl) => {
+  if (newUrl) {
     try {
       // 构建更新请求数据
       const updateData = {
         username: form.value.username,
         bio: form.value.bio,
-        avatar: response.url
+        avatar: newUrl
       }
       
       // 发送更新请求
@@ -355,22 +368,15 @@ const handleAvatarSuccess = async (response) => {
       // 更新 store 中的用户信息
       userStore.setUser({
         ...userStore.user,
-        avatar: response.url
+        avatar: newUrl
       })
       ElMessage.success('头像更新成功')
     } catch (error) {
       console.error('Failed to update avatar:', error)
       ElMessage.error('头像更新失败')
     }
-  } else {
-    ElMessage.error('上传失败：无效的响应数据')
   }
-}
-
-const handleAvatarError = (error) => {
-  console.error('Avatar upload error:', error)
-  ElMessage.error('头像上传失败，请重试')
-}
+})
 
 const handleMenuSelect = (index) => {
   activeMenu.value = index
@@ -492,6 +498,54 @@ const fetchUserProfile = async () => {
 onMounted(() => {
   fetchUserProfile()
 })
+
+// 处理头像上传成功
+const handleAvatarUpload = async (url) => {
+  try {
+    const response = await axios.put('/api/user/profile', {
+      avatar: url
+    }, {
+      headers: {
+        Authorization: 'Bearer ' + userStore.token
+      }
+    })
+    
+    if (response.data) {
+      userStore.setAvatar(url)
+      ElMessage.success('头像更新成功')
+    }
+  } catch (error) {
+    console.error('Failed to update avatar:', error)
+    ElMessage.error('头像更新失败')
+  }
+}
+
+// 处理上传错误
+const handleUploadError = (error) => {
+  console.error('Upload error:', error)
+  ElMessage.error('上传失败，请重试')
+}
+
+// 保存个人信息
+const handleSave = async () => {
+  try {
+    const response = await axios.put('/api/user/profile', {
+      nickname: userInfo.value.nickname
+    }, {
+      headers: {
+        Authorization: 'Bearer ' + userStore.token
+      }
+    })
+    
+    if (response.data) {
+      userStore.setNickname(userInfo.value.nickname)
+      ElMessage.success('保存成功')
+    }
+  } catch (error) {
+    console.error('Failed to save profile:', error)
+    ElMessage.error('保存失败')
+  }
+}
 </script>
 
 <style lang="scss" scoped>
@@ -515,11 +569,22 @@ onMounted(() => {
       height: 100px;
       margin: 0 auto;
       cursor: pointer;
-      border-radius: 50%;
-      overflow: hidden;
 
-      &:hover .avatar-hover-mask {
-        opacity: 1;
+      :deep(.uploader-component) {
+        width: 100%;
+        height: 100%;
+        display: block;
+
+        .file-uploader {
+          width: 100%;
+          height: 100%;
+        }
+
+        .el-avatar {
+          width: 100%;
+          height: 100%;
+          border-radius: 50%;
+        }
       }
 
       .avatar-image {
@@ -542,17 +607,27 @@ onMounted(() => {
         opacity: 0;
         transition: opacity 0.3s ease;
         color: white;
-        font-size: 0.9em;
+        border-radius: 50%;
+        cursor: pointer;
 
         .el-icon {
           font-size: 24px;
           margin-bottom: 4px;
         }
+
+        span {
+          font-size: 12px;
+        }
       }
 
-      :deep(.el-upload) {
-        width: 100%;
-        height: 100%;
+      &:hover {
+        .avatar-hover-mask {
+          opacity: 1;
+        }
+
+        .avatar-image {
+          transform: scale(1.05);
+        }
       }
     }
 
@@ -993,5 +1068,73 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   margin-top: 20px;
+}
+
+.avatar-upload {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto;
+  cursor: pointer;
+
+  :deep(.uploader-component) {
+    width: 100%;
+    height: 100%;
+    display: block;
+
+    .file-uploader {
+      width: 100%;
+      height: 100%;
+    }
+  }
+
+  .avatar-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .avatar-image {
+    width: 100%;
+    height: 100%;
+    transition: all 0.3s ease;
+    border-radius: 50%;
+  }
+
+  .avatar-hover-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    color: white;
+    border-radius: 50%;
+
+    .el-icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+
+    span {
+      font-size: 12px;
+    }
+  }
+
+  &:hover {
+    .avatar-hover-mask {
+      opacity: 1;
+    }
+
+    .avatar-image {
+      transform: scale(1.05);
+    }
+  }
 }
 </style> 

@@ -8,16 +8,18 @@ import (
 	"strings"
 	"time"
 
+	"notex/pkg/types"
+
 	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
-	Server      ServerConfig      `yaml:"server" json:"server"`
-	Database    DatabaseConfig    `yaml:"database" json:"database"`
-	Email       EmailConfig       `yaml:"email" json:"email"`
-	JWT         JWTConfig         `yaml:"jwt" json:"jwt"`
-	RateLimit   RateLimitConfig   `yaml:"rate_limit" json:"rate_limit"`
-	FileStorage FileStorageConfig `yaml:"file_storage" json:"file_storage"`
+	Server    ServerConfig        `yaml:"server" json:"server"`
+	Database  DatabaseConfig      `yaml:"database" json:"database"`
+	Email     EmailConfig         `yaml:"email" json:"email"`
+	JWT       JWTConfig           `yaml:"jwt" json:"jwt"`
+	RateLimit RateLimitConfig     `yaml:"rate_limit" json:"rate_limit"`
+	Storage   types.StorageConfig `yaml:"storage" json:"storage"`
 }
 
 type ServerConfig struct {
@@ -63,15 +65,6 @@ type RateLimitConfig struct {
 	IP    RateLimitItem `yaml:"ip" json:"ip"`
 	API   RateLimitItem `yaml:"api" json:"api"`
 	Login RateLimitItem `yaml:"login" json:"login"`
-}
-
-// FileStorageConfig 文件存储配置
-type FileStorageConfig struct {
-	UploadDir     string   `yaml:"upload_dir" json:"upload_dir"`         // 上传目录
-	AllowedTypes  []string `yaml:"allowed_types" json:"allowed_types"`   // 允许的文件类型
-	MaxSize       int64    `yaml:"max_size" json:"max_size"`             // 最大文件大小（字节）
-	URLPrefix     string   `yaml:"url_prefix" json:"url_prefix"`         // 文件访问URL前缀
-	ThumbnailSize int      `yaml:"thumbnail_size" json:"thumbnail_size"` // 缩略图大小
 }
 
 var (
@@ -120,12 +113,18 @@ var (
 				TTL:   time.Hour,
 			},
 		},
-		FileStorage: FileStorageConfig{
-			UploadDir:     "uploads",
-			AllowedTypes:  []string{"image/jpeg", "image/png", "image/gif", "image/webp"},
+		Storage: types.StorageConfig{
+			Type:          "local",
 			MaxSize:       10 << 20, // 10MB
-			URLPrefix:     "/uploads/",
+			AllowedTypes:  []string{"image/jpeg", "image/png", "image/gif", "image/webp"},
 			ThumbnailSize: 300,
+			Local: struct {
+				UploadDir string `yaml:"upload_dir" json:"upload_dir"`
+				URLPrefix string `yaml:"url_prefix" json:"url_prefix"`
+			}{
+				UploadDir: "uploads",
+				URLPrefix: "/uploads/",
+			},
 		},
 	}
 	LoadedConfig Config
@@ -158,9 +157,9 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("rate limit config error: %v", err)
 	}
 
-	// 验证文件存储配置
-	if err := c.FileStorage.Validate(); err != nil {
-		return fmt.Errorf("file storage config error: %v", err)
+	// 验证存储配置
+	if err := c.Storage.Validate(); err != nil {
+		return fmt.Errorf("storage config error: %v", err)
 	}
 
 	return nil
@@ -293,26 +292,6 @@ func (c *RateLimitConfig) Validate() error {
 	return nil
 }
 
-// Validate 验证文件存储配置
-func (c *FileStorageConfig) Validate() error {
-	if c.UploadDir == "" {
-		return fmt.Errorf("upload_dir cannot be empty")
-	}
-	if len(c.AllowedTypes) == 0 {
-		return fmt.Errorf("allowed_types cannot be empty")
-	}
-	if c.MaxSize <= 0 {
-		return fmt.Errorf("max_size must be positive")
-	}
-	if c.URLPrefix == "" {
-		return fmt.Errorf("url_prefix cannot be empty")
-	}
-	if c.ThumbnailSize <= 0 {
-		return fmt.Errorf("thumbnail_size must be positive")
-	}
-	return nil
-}
-
 // isValidEmail 验证邮箱格式是否正确
 func isValidEmail(email string) bool {
 	parts := strings.Split(email, "@")
@@ -442,21 +421,97 @@ func overrideWithEnv(cfg *Config) {
 		}
 	}
 
-	// 文件存储配置
-	if uploadDir := os.Getenv("FILE_UPLOAD_DIR"); uploadDir != "" {
-		cfg.FileStorage.UploadDir = uploadDir
+	// 存储配置
+	if storageType := os.Getenv("STORAGE_TYPE"); storageType != "" {
+		cfg.Storage.Type = storageType
 	}
-	if maxSize := os.Getenv("FILE_MAX_SIZE"); maxSize != "" {
+	if maxSize := os.Getenv("STORAGE_MAX_SIZE"); maxSize != "" {
 		if size, err := strconv.ParseInt(maxSize, 10, 64); err == nil {
-			cfg.FileStorage.MaxSize = size
+			cfg.Storage.MaxSize = size
 		}
 	}
-	if urlPrefix := os.Getenv("FILE_URL_PREFIX"); urlPrefix != "" {
-		cfg.FileStorage.URLPrefix = urlPrefix
+	if allowedTypes := os.Getenv("STORAGE_ALLOWED_TYPES"); allowedTypes != "" {
+		cfg.Storage.AllowedTypes = strings.Split(allowedTypes, ",")
 	}
-	if thumbnailSize := os.Getenv("FILE_THUMBNAIL_SIZE"); thumbnailSize != "" {
+	if thumbnailSize := os.Getenv("STORAGE_THUMBNAIL_SIZE"); thumbnailSize != "" {
 		if size, err := strconv.Atoi(thumbnailSize); err == nil {
-			cfg.FileStorage.ThumbnailSize = size
+			cfg.Storage.ThumbnailSize = size
+		}
+	}
+
+	// 本地存储配置
+	if localUploadDir := os.Getenv("STORAGE_LOCAL_UPLOAD_DIR"); localUploadDir != "" {
+		cfg.Storage.Local.UploadDir = localUploadDir
+	}
+	if localURLPrefix := os.Getenv("STORAGE_LOCAL_URL_PREFIX"); localURLPrefix != "" {
+		cfg.Storage.Local.URLPrefix = localURLPrefix
+	}
+
+	// OSS配置
+	if ossEndpoint := os.Getenv("STORAGE_OSS_ENDPOINT"); ossEndpoint != "" {
+		cfg.Storage.OSS.Endpoint = ossEndpoint
+	}
+	if ossAccessKey := os.Getenv("STORAGE_OSS_ACCESS_KEY"); ossAccessKey != "" {
+		cfg.Storage.OSS.AccessKey = ossAccessKey
+	}
+	if ossAccessSecret := os.Getenv("STORAGE_OSS_ACCESS_SECRET"); ossAccessSecret != "" {
+		cfg.Storage.OSS.AccessSecret = ossAccessSecret
+	}
+	if ossBucketName := os.Getenv("STORAGE_OSS_BUCKET_NAME"); ossBucketName != "" {
+		cfg.Storage.OSS.BucketName = ossBucketName
+	}
+	if ossRegion := os.Getenv("STORAGE_OSS_REGION"); ossRegion != "" {
+		cfg.Storage.OSS.Region = ossRegion
+	}
+	if ossRoleArn := os.Getenv("STORAGE_OSS_ROLE_ARN"); ossRoleArn != "" {
+		cfg.Storage.OSS.RoleArn = ossRoleArn
+	}
+	if ossURLPrefix := os.Getenv("STORAGE_OSS_URL_PREFIX"); ossURLPrefix != "" {
+		cfg.Storage.OSS.URLPrefix = ossURLPrefix
+	}
+
+	// COS配置
+	if cosEndpoint := os.Getenv("STORAGE_COS_ENDPOINT"); cosEndpoint != "" {
+		cfg.Storage.COS.Endpoint = cosEndpoint
+	}
+	if cosAccessKey := os.Getenv("STORAGE_COS_ACCESS_KEY"); cosAccessKey != "" {
+		cfg.Storage.COS.AccessKey = cosAccessKey
+	}
+	if cosAccessSecret := os.Getenv("STORAGE_COS_ACCESS_SECRET"); cosAccessSecret != "" {
+		cfg.Storage.COS.AccessSecret = cosAccessSecret
+	}
+	if cosBucketName := os.Getenv("STORAGE_COS_BUCKET_NAME"); cosBucketName != "" {
+		cfg.Storage.COS.BucketName = cosBucketName
+	}
+	if cosRegion := os.Getenv("STORAGE_COS_REGION"); cosRegion != "" {
+		cfg.Storage.COS.Region = cosRegion
+	}
+	if cosURLPrefix := os.Getenv("STORAGE_COS_URL_PREFIX"); cosURLPrefix != "" {
+		cfg.Storage.COS.URLPrefix = cosURLPrefix
+	}
+
+	// MinIO配置
+	if minioEndpoint := os.Getenv("STORAGE_MINIO_ENDPOINT"); minioEndpoint != "" {
+		cfg.Storage.MinIO.Endpoint = minioEndpoint
+	}
+	if minioAccessKey := os.Getenv("STORAGE_MINIO_ACCESS_KEY"); minioAccessKey != "" {
+		cfg.Storage.MinIO.AccessKey = minioAccessKey
+	}
+	if minioAccessSecret := os.Getenv("STORAGE_MINIO_ACCESS_SECRET"); minioAccessSecret != "" {
+		cfg.Storage.MinIO.AccessSecret = minioAccessSecret
+	}
+	if minioBucketName := os.Getenv("STORAGE_MINIO_BUCKET_NAME"); minioBucketName != "" {
+		cfg.Storage.MinIO.BucketName = minioBucketName
+	}
+	if minioRegion := os.Getenv("STORAGE_MINIO_REGION"); minioRegion != "" {
+		cfg.Storage.MinIO.Region = minioRegion
+	}
+	if minioURLPrefix := os.Getenv("STORAGE_MINIO_URL_PREFIX"); minioURLPrefix != "" {
+		cfg.Storage.MinIO.URLPrefix = minioURLPrefix
+	}
+	if minioUseSSL := os.Getenv("STORAGE_MINIO_USE_SSL"); minioUseSSL != "" {
+		if useSSL, err := strconv.ParseBool(minioUseSSL); err == nil {
+			cfg.Storage.MinIO.UseSSL = useSSL
 		}
 	}
 }

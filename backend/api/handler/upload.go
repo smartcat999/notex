@@ -17,20 +17,21 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nfnt/resize"
 
-	"notex/config"
-	"notex/pkg/response"
 	"notex/pkg/storage"
+	"notex/pkg/types"
 )
 
+// UploadHandler 上传处理器
 type UploadHandler struct {
 	storage storage.Storage
-	cfg     *config.FileStorageConfig
+	config  *types.StorageConfig
 }
 
-func NewUploadHandler(storage storage.Storage, cfg *config.FileStorageConfig) *UploadHandler {
+// NewUploadHandler 创建上传处理器
+func NewUploadHandler(storage storage.Storage, config *types.StorageConfig) *UploadHandler {
 	return &UploadHandler{
 		storage: storage,
-		cfg:     cfg,
+		config:  config,
 	}
 }
 
@@ -47,31 +48,29 @@ type UploadResponse struct {
 func (h *UploadHandler) Upload(c *gin.Context) {
 	file, header, err := c.Request.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to get file"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No file uploaded"})
 		return
 	}
 	defer file.Close()
 
-	// 使用存储接口上传文件
 	result, err := h.storage.Upload(file, header)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload file"})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	// 直接返回上传结果
 	c.JSON(http.StatusOK, result)
 }
 
 // GetUploadConfig 获取上传配置
 func (h *UploadHandler) GetUploadConfig(c *gin.Context) {
 	config := h.storage.GetUploadConfig()
-	response.Success(c, "Upload config retrieved", config)
+	c.JSON(http.StatusOK, config)
 }
 
 // isAllowedType 检查文件类型是否允许
 func (h *UploadHandler) isAllowedType(contentType string) bool {
-	for _, allowed := range h.cfg.AllowedTypes {
+	for _, allowed := range h.config.AllowedTypes {
 		if contentType == allowed {
 			return true
 		}
@@ -115,7 +114,7 @@ func (h *UploadHandler) createThumbnail(filePath string) (string, error) {
 	}
 
 	// 生成缩略图
-	thumbnail := resize.Thumbnail(uint(h.cfg.ThumbnailSize), uint(h.cfg.ThumbnailSize), img, resize.Lanczos3)
+	thumbnail := resize.Thumbnail(uint(h.config.ThumbnailSize), uint(h.config.ThumbnailSize), img, resize.Lanczos3)
 
 	// 生成缩略图文件名
 	dir := filepath.Dir(filePath)
@@ -146,4 +145,29 @@ func (h *UploadHandler) createThumbnail(filePath string) (string, error) {
 	}
 
 	return thumbnailPath, nil
+}
+
+// GetCredentials 获取上传凭证
+func (h *UploadHandler) GetCredentials(c *gin.Context) {
+	filename := c.Query("filename")
+	contentType := c.Query("contentType")
+
+	if filename == "" || contentType == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "filename and contentType are required"})
+		return
+	}
+
+	// 检查文件类型是否允许
+	if !h.isAllowedType(contentType) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "file type not allowed"})
+		return
+	}
+
+	credentials, err := h.storage.GetCredentials(filename, contentType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, credentials)
 }
