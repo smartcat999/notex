@@ -291,6 +291,11 @@ func (s *PostService) convertToResponse(post *model.Post) (*dto.PostResponse, er
 		PublishedAt:  post.PublishedAt,
 		CreatedAt:    post.CreatedAt,
 		UpdatedAt:    post.UpdatedAt,
+		Author: &dto.UserInfo{
+			ID:       post.User.ID,
+			Username: post.User.Username,
+			Avatar:   post.User.Avatar,
+		},
 	}
 
 	if post.Category.ID != 0 {

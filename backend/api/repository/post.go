@@ -35,7 +35,7 @@ func (r *PostRepository) Delete(id uint) error {
 // FindByID 根据ID查找文章
 func (r *PostRepository) FindByID(id uint) (*model.Post, error) {
 	var post model.Post
-	err := r.DB.Preload("Category").Preload("Tags").First(&post, id).Error
+	err := r.DB.Preload("Category").Preload("Tags").Preload("User").First(&post, id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -90,6 +90,7 @@ func (r *PostRepository) List(page, pageSize int, conditions map[string]interfac
 	// 获取分页数据
 	err = query.Preload("Category").
 		Preload("Tags").
+		Preload("User").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
 		Find(&posts).Error
@@ -155,6 +156,7 @@ func (r *PostRepository) GetPostsByArchive(yearMonth string) ([]model.Post, erro
 		Where("status = ? AND to_char(published_at, 'YYYY-MM') = ?", "published", yearMonth).
 		Preload("Category").
 		Preload("Tags").
+		Preload("User").
 		Order("published_at DESC").
 		Find(&posts).Error
 
@@ -181,6 +183,7 @@ func (r *PostRepository) ListByUserID(userID uint, page, pageSize int) ([]model.
 	// 获取分页数据
 	err = query.Preload("Category").
 		Preload("Tags").
+		Preload("User").
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
 		Order("published_at DESC, created_at DESC").

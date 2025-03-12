@@ -19,11 +19,9 @@
             <el-icon><ChatDotRound /></el-icon>
             {{ post.comment_count }}
           </span>
-          <span>
-            <el-icon><User /></el-icon>
-            {{ post.author?.username }}
-          </span>
         </div>
+        <!-- 作者信息 -->
+        <AuthorCard v-if="post.author" :author="post.author" />
         <div class="post-tags">
           <el-tag
             v-for="tag in post.tags"
@@ -107,6 +105,7 @@
               >
                 {{ comment.user?.username }}
               </router-link>
+              <span class="author-tag" v-if="comment.user?.id === post.author?.id">作者</span>
               <span class="time">{{ formatDate(comment.created_at) }}</span>
             </div>
           </div>
@@ -143,6 +142,7 @@ import { marked } from 'marked'
 import hljs from 'highlight.js'
 import { ElMessage } from 'element-plus'
 import '@/assets/styles/markdown.scss'
+import AuthorCard from '@/components/AuthorCard.vue'
 
 const route = useRoute()
 const userStore = useUserStore()
@@ -295,16 +295,21 @@ onUnmounted(() => {
 
   .post-header {
     position: relative;
-    margin-bottom: 24px;
-    border-radius: 16px;
+    margin-bottom: 32px;
+    border-radius: 20px;
     overflow: hidden;
     background: rgba(255, 255, 255, 0.98);
-    box-shadow: 0 4px 20px rgba(43, 88, 118, 0.08);
+    box-shadow: 0 8px 30px rgba(43, 88, 118, 0.1);
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(43, 88, 118, 0.15);
+    }
 
     &.no-cover {
-      background: linear-gradient(135deg, rgba(43, 88, 118, 0.05), rgba(78, 67, 118, 0.05));
-      padding: 32px 40px 28px;
-      min-height: 140px;
+      background: linear-gradient(135deg, rgba(43, 88, 118, 0.02), rgba(78, 67, 118, 0.02));
+      padding: 40px;
       
       .header-content {
         position: relative;
@@ -312,33 +317,29 @@ onUnmounted(() => {
         background: none;
 
         h1 {
-          font-size: 1.8em;
-          line-height: 1.6;
-          margin: 0 0 14px;
+          font-size: 2em;
+          line-height: 1.4;
+          margin: 0 0 20px;
+          letter-spacing: -0.02em;
         }
 
         .post-meta {
-          margin-bottom: 10px;
-        }
-
-        .post-tags {
-          margin-top: 0;
+          margin-bottom: 24px;
         }
       }
     }
 
     .post-cover {
       width: 100%;
-      height: 260px;
+      height: 320px;
       position: relative;
-      margin-bottom: 20px;
       overflow: hidden;
 
       img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 0.4s ease;
+        transition: transform 0.6s ease;
       }
 
       &::after {
@@ -347,91 +348,118 @@ onUnmounted(() => {
         bottom: 0;
         left: 0;
         right: 0;
-        height: 100px;
+        height: 160px;
         background: linear-gradient(
           to bottom,
           rgba(255, 255, 255, 0),
-          rgba(255, 255, 255, 0.85) 75%,
+          rgba(255, 255, 255, 0.9) 70%,
           rgba(255, 255, 255, 0.98)
         );
         pointer-events: none;
       }
 
       &:hover img {
-        transform: scale(1.02);
+        transform: scale(1.03);
       }
     }
 
     .header-content {
-      padding: 0 24px 24px;
-    }
-
-    h1 {
-      font-size: 1.8em;
-      margin-bottom: 14px;
-      font-weight: 600;
-      line-height: 1.4;
-      letter-spacing: -0.01em;
-      background: linear-gradient(135deg, #2B5876, #4E4376);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      text-align: center;
-    }
-
-    .post-meta {
-      color: #6b7280;
-      font-size: 0.85em;
-      margin-bottom: 16px;
+      padding: 0 40px 32px;
       display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 12px;
+      flex-direction: column;
+      align-items: center;
 
-      span {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 3px 8px;
-        background: rgba(43, 88, 118, 0.08);
-        border-radius: 16px;
-        transition: all 0.3s ease;
+      h1 {
+        font-size: 1.75em;
+        margin: 0 0 24px;
+        font-weight: 600;
+        line-height: 1.4;
+        letter-spacing: -0.01em;
+        background: linear-gradient(135deg, #2B5876 30%, #4E4376);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-align: center;
+        width: 100%;
+        max-width: 800px;
+      }
 
-        &:hover {
-          background: rgba(43, 88, 118, 0.12);
-          transform: translateY(-1px);
-        }
+      .post-meta {
+        width: 100%;
+        color: #6b7280;
+        font-size: 0.9em;
+        margin-bottom: 24px;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 16px;
 
-        .el-icon {
-          font-size: 0.95em;
-          color: #2B5876;
+        span {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 12px;
+          background: rgba(43, 88, 118, 0.06);
+          border-radius: 20px;
+          transition: all 0.3s ease;
+
+          &:hover {
+            background: rgba(43, 88, 118, 0.1);
+            transform: translateY(-1px);
+          }
+
+          .el-icon {
+            font-size: 1.1em;
+            color: #2B5876;
+          }
         }
       }
-    }
 
-    .post-tags {
-      display: flex;
-      justify-content: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 16px;
-
-      .tag {
-        margin: 0;
-        padding: 4px 12px;
-        font-size: 0.85em;
-        font-weight: 500;
-        border-radius: 20px;
-        transition: all 0.3s ease;
-        cursor: pointer;
+      :deep(.author-card) {
+        width: 100%;
+        margin: 0 0 24px;
+        display: flex;
+        justify-content: center;
         border: none;
-        background: rgba(43, 88, 118, 0.08);
-        color: #2B5876;
-        backdrop-filter: blur(4px);
+        padding: 0;
 
-        &:hover {
-          transform: translateY(-2px);
-          background: rgba(43, 88, 118, 0.12);
-          box-shadow: 0 4px 12px rgba(43, 88, 118, 0.1);
+        .author-content {
+          background: rgba(43, 88, 118, 0.03);
+          padding: 12px 20px;
+          border-radius: 16px;
+          transition: all 0.3s ease;
+
+          &:hover {
+            background: rgba(43, 88, 118, 0.06);
+            transform: translateY(-1px);
+          }
+        }
+      }
+
+      .post-tags {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        flex-wrap: wrap;
+
+        .tag {
+          margin: 0;
+          padding: 6px 16px;
+          font-size: 0.9em;
+          font-weight: 500;
+          border-radius: 20px;
+          transition: all 0.3s ease;
+          cursor: pointer;
+          border: none;
+          background: rgba(43, 88, 118, 0.06);
+          color: #2B5876;
+          backdrop-filter: blur(4px);
+
+          &:hover {
+            transform: translateY(-2px);
+            background: rgba(43, 88, 118, 0.1);
+            box-shadow: 0 4px 12px rgba(43, 88, 118, 0.1);
+          }
         }
       }
     }
@@ -614,15 +642,27 @@ onUnmounted(() => {
         }
 
         .comment-info {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
           .username {
             font-weight: 500;
             color: #2c3e50;
             text-decoration: none;
-            margin-right: 12px;
 
             &:hover {
               color: #3699FF;
             }
+          }
+
+          .author-tag {
+            font-size: 0.75em;
+            padding: 2px 6px;
+            background: rgba(43, 88, 118, 0.08);
+            color: #2B5876;
+            border-radius: 4px;
+            font-weight: 500;
           }
 
           .time {

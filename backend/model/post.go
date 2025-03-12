@@ -13,6 +13,7 @@ type Post struct {
 	UserID      uint      `json:"user_id" gorm:"not null"`
 	CategoryID  uint      `json:"category_id"`
 	Category    Category  `json:"category" gorm:"foreignKey:CategoryID"`
+	User        *User     `json:"user" gorm:"foreignKey:UserID"`
 	Tags        []Tag     `json:"tags" gorm:"many2many:post_tags;"`
 	Status      string    `json:"status" gorm:"default:'draft'"` // draft, published
 	Views       int64     `json:"views" gorm:"default:0"`        // 浏览量

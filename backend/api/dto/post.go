@@ -47,6 +47,7 @@ type PostResponse struct {
 	Status       string    `json:"status"`
 	Views        int64     `json:"views"`
 	CommentCount int64     `json:"comment_count"`
+	Author       *UserInfo `json:"author"`
 	PublishedAt  time.Time `json:"published_at"`
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
