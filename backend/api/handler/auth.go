@@ -4,17 +4,20 @@ import (
 	"net/http"
 	"notex/api/dto"
 	"notex/api/service"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AuthHandler struct {
-	service *service.AuthService
+	service     *service.AuthService
+	postService *service.PostService
 }
 
-func NewAuthHandler(authService *service.AuthService) *AuthHandler {
+func NewAuthHandler(authService *service.AuthService, postService *service.PostService) *AuthHandler {
 	return &AuthHandler{
-		service: authService,
+		service:     authService,
+		postService: postService,
 	}
 }
 
@@ -174,4 +177,66 @@ func (h *AuthHandler) UpdateProfile(c *gin.Context) {
 // Logout 用户登出
 func (h *AuthHandler) Logout(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "logout successful"})
+}
+
+// GetPublicProfile 获取用户公开个人主页信息
+func (h *AuthHandler) GetPublicProfile(c *gin.Context) {
+	userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "无效的用户ID"})
+		return
+	}
+
+	user, err := h.service.GetUserProfile(uint(userID))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "用户不存在"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": user,
+	})
+}
+
+// GetUserHome 获取用户主页信息（包含用户资料和文章列表）
+func (h *AuthHandler) GetUserHome(c *gin.Context) {
+	userID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"message": "无效的用户ID"})
+		return
+	}
+
+	// 获取分页参数
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(c.DefaultQuery("per_page", "10"))
+
+	// 获取用户信息
+	user, err := h.service.GetUserProfile(uint(userID))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"message": "用户不存在"})
+		return
+	}
+
+	// 创建查询对象
+	query := &dto.PostListQuery{
+		UserID:   uint(userID),
+		Page:     page,
+		PageSize: pageSize,
+		Status:   "published", // 强制设置状态为已发布
+	}
+
+	// 获取用户文章列表
+	posts, total, err := h.postService.ListPosts(query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "获取文章列表失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": user,
+		"posts": gin.H{
+			"items": posts,
+			"total": total,
+		},
+	})
 }

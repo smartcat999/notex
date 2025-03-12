@@ -164,3 +164,31 @@ func (r *PostRepository) GetPostsByArchive(yearMonth string) ([]model.Post, erro
 
 	return posts, nil
 }
+
+// ListByUserID 获取用户的文章列表
+func (r *PostRepository) ListByUserID(userID uint, page, pageSize int) ([]model.Post, int64, error) {
+	var posts []model.Post
+	var total int64
+
+	query := r.DB.Model(&model.Post{}).Where("user_id = ?", userID)
+
+	// 获取总数
+	err := query.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 获取分页数据
+	err = query.Preload("Category").
+		Preload("Tags").
+		Offset((page - 1) * pageSize).
+		Limit(pageSize).
+		Order("published_at DESC, created_at DESC").
+		Find(&posts).Error
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return posts, total, nil
+}

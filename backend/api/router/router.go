@@ -61,7 +61,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 		// 认证相关路由（无需认证）
 		auth := api.Group("/auth")
 		{
-			authHandler := handler.NewAuthHandler(authService)
+			authHandler := handler.NewAuthHandler(authService, postService)
 			verificationHandler := handler.NewVerificationHandler(verificationService)
 
 			auth.POST("/register", middleware.LoginRateLimit(), authHandler.Register)
@@ -76,26 +76,35 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 		commentHandler := handler.NewCommentHandler(commentService)
 		categoryHandler := handler.NewCategoryHandler(categoryService)
 		tagHandler := handler.NewTagHandler(tagService)
+		authHandler := handler.NewAuthHandler(authService, postService)
 
-		// 文章相关的公开接口
-		api.GET("/posts/public", postHandler.ListPublicPosts)
-		api.GET("/posts/:id", postHandler.GetPost)
-		api.GET("/posts/:id/comments", commentHandler.ListComments)
-		api.GET("/posts/archives", postHandler.GetArchives)
-		api.GET("/posts/archives/:yearMonth", postHandler.GetPostsByArchive)
+		// 公开接口组
+		public := api.Group("/public")
+		{
+			// 文章相关的公开接口
+			public.GET("/posts", postHandler.ListPublicPosts)
+			public.GET("/posts/:id", postHandler.GetPost)
+			public.GET("/posts/:id/comments", commentHandler.ListComments)
+			public.GET("/posts/archives", postHandler.GetArchives)
+			public.GET("/posts/archives/:yearMonth", postHandler.GetPostsByArchive)
 
-		// 分类和标签的公开接口
-		api.GET("/categories", categoryHandler.ListCategories)
-		api.GET("/categories/top", categoryHandler.GetTopCategories)
-		api.GET("/tags", tagHandler.ListTags)
-		api.GET("/tags/top", tagHandler.GetTopTags)
+			// 分类和标签的公开接口
+			public.GET("/categories", categoryHandler.ListCategories)
+			public.GET("/categories/top", categoryHandler.GetTopCategories)
+			public.GET("/tags", tagHandler.ListTags)
+			public.GET("/tags/top", tagHandler.GetTopTags)
+
+			// 用户公开信息接口
+			public.GET("/users/:id/home", authHandler.GetUserHome)
+			public.GET("/users/:id/comments", commentHandler.ListUserComments)
+		}
 
 		// 需要认证的路由组
 		authenticated := api.Group("")
 		authenticated.Use(middleware.AuthMiddleware())
 		{
 			// 认证相关路由
-			authHandler := handler.NewAuthHandler(authService)
+			authHandler := handler.NewAuthHandler(authService, postService)
 			verificationHandler := handler.NewVerificationHandler(verificationService)
 			authenticated.GET("/auth/profile", authHandler.GetProfile)
 			authenticated.PUT("/auth/profile", authHandler.UpdateProfile)

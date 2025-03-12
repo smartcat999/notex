@@ -20,7 +20,7 @@ export function getPosts(params) {
 // 获取文章详情
 export function getPost(id) {
   return request({
-    url: `/posts/${id}`,
+    url: `/public/posts/${id}`,
     method: 'get'
   })
 }
@@ -63,7 +63,7 @@ export function getRecentPosts(params) {
 // 获取分类列表
 export function getCategories(params) {
   return request({
-    url: '/categories',
+    url: '/public/categories',
     method: 'get',
     params
   })
@@ -72,7 +72,7 @@ export function getCategories(params) {
 // 获取热门分类
 export function getTopCategories(params) {
   return request({
-    url: '/categories/top',
+    url: '/public/categories/top',
     method: 'get',
     params
   })
@@ -81,7 +81,7 @@ export function getTopCategories(params) {
 // 获取标签列表
 export function getTags(params) {
   return request({
-    url: '/tags',
+    url: '/public/tags',
     method: 'get',
     params
   })
@@ -90,7 +90,7 @@ export function getTags(params) {
 // 获取热门标签
 export function getTopTags(params) {
   return request({
-    url: '/tags/top',
+    url: '/public/tags/top',
     method: 'get',
     params
   })
@@ -141,16 +141,25 @@ export function createTag(data) {
 // 获取公开文章列表（匿名访问）
 export function getPublicPosts(params) {
   return request({
-    url: '/posts/public',
+    url: '/public/posts',
     method: 'get',
-    params
+    params: {
+      page: params.page || 1,
+      page_size: params.per_page || 10,
+      user_id: params.user_id,
+      search: params.search,
+      category_id: params.category_id,
+      tag_id: params.tag_id,
+      sort: params.sort || 'newest',
+      status: 'published'
+    }
   })
 }
 
 // 获取文章评论列表
 export function getComments(postId, params) {
   return request({
-    url: `/posts/${postId}/comments`,
+    url: `/public/posts/${postId}/comments`,
     method: 'get',
     params
   })
@@ -176,7 +185,7 @@ export function deleteComment(postId, commentId) {
 // 获取文章归档列表
 export function getArchives() {
   return request({
-    url: '/posts/archives',
+    url: '/public/posts/archives',
     method: 'get'
   })
 }
@@ -184,7 +193,7 @@ export function getArchives() {
 // 获取指定归档日期的文章列表
 export function getPostsByArchive(yearMonth) {
   return request({
-    url: `/posts/archives/${yearMonth}`,
+    url: `/public/posts/archives/${yearMonth}`,
     method: 'get'
   })
 }
@@ -194,10 +203,7 @@ export function getUserPosts(params) {
   return request({
     url: '/posts',
     method: 'get',
-    params: {
-      ...params,
-      user: 'current'
-    }
+    params
   })
 }
 
@@ -207,5 +213,17 @@ export function getUserComments(params) {
     url: '/users/comments',
     method: 'get',
     params
+  })
+}
+
+// 获取用户的公开文章列表
+export function getUserPublicPosts(userId, params) {
+  return request({
+    url: `/users/${userId}/posts`,
+    method: 'get',
+    params: {
+      page: params.page || 1,
+      per_page: params.per_page || 10
+    }
   })
 }

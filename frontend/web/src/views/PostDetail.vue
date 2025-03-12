@@ -92,11 +92,21 @@
       <div class="comments-list">
         <div v-for="comment in comments" :key="comment.id" class="comment-item">
           <div class="comment-header">
-            <el-avatar :size="40" :src="comment.user?.avatar">
-              {{ comment.user?.username?.charAt(0) }}
-            </el-avatar>
+            <router-link 
+              :to="`/users/${comment.user?.id}`" 
+              class="avatar-link"
+            >
+              <el-avatar :size="40" :src="comment.user?.avatar">
+                {{ comment.user?.username?.charAt(0) }}
+              </el-avatar>
+            </router-link>
             <div class="comment-info">
-              <span class="username">{{ comment.user?.username }}</span>
+              <router-link 
+                :to="`/users/${comment.user?.id}`" 
+                class="username"
+              >
+                {{ comment.user?.username }}
+              </router-link>
               <span class="time">{{ formatDate(comment.created_at) }}</span>
             </div>
           </div>
@@ -592,33 +602,32 @@ onUnmounted(() => {
       .comment-header {
         display: flex;
         align-items: center;
-        margin-bottom: 10px;
+        margin-bottom: 12px;
 
-        .el-avatar {
-          border: 3px solid #fff;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-          transition: all 0.3s ease;
-          width: 36px;
-          height: 36px;
-
+        .avatar-link {
+          text-decoration: none;
+          margin-right: 12px;
+          
           &:hover {
-            transform: scale(1.1);
+            opacity: 0.9;
           }
         }
 
         .comment-info {
-          margin-left: 15px;
-
           .username {
-            font-weight: 600;
-            color: #1f2937;
-            margin-right: 16px;
-            font-size: 0.9em;
+            font-weight: 500;
+            color: #2c3e50;
+            text-decoration: none;
+            margin-right: 12px;
+
+            &:hover {
+              color: #3699FF;
+            }
           }
 
           .time {
-            color: #6b7280;
-            font-size: 0.8em;
+            color: #718096;
+            font-size: 0.9em;
           }
         }
       }

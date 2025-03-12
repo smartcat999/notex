@@ -48,8 +48,15 @@
                 </template>
               </FileUploader>
             </div>
-            <h2>{{ userStore.user?.username }}</h2>
-            <p class="email">{{ userStore.user?.email }}</p>
+            <div class="user-info">
+              <router-link 
+                :to="{ name: 'user-profile', params: { id: userStore.user?.id }}" 
+                class="username-link"
+              >
+                <h1 class="username">{{ userStore.user?.username }}</h1>
+              </router-link>
+              <p class="bio">{{ userStore.user?.bio || '这个用户很懒，还没有写简介' }}</p>
+            </div>
           </div>
           <div class="profile-stats">
             <div class="stat-item">
@@ -555,117 +562,117 @@ const handleSave = async () => {
   padding: 0 20px;
 
   .profile-header {
-    background: linear-gradient(135deg, #2B5876, #4E4376);
-    padding: 40px 0;
+    background: #ffffff;
+    padding: 32px 24px;
     border-radius: 16px;
-    color: white;
+    color: #2c3e50;
     text-align: center;
     margin-bottom: 32px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(135deg, rgba(54, 153, 255, 0.08), rgba(91, 141, 239, 0.08));
+      pointer-events: none;
+    }
 
     .avatar-upload {
       position: relative;
       width: 100px;
       height: 100px;
-      margin: 0 auto;
+      margin: 0 auto 24px;
       cursor: pointer;
-
+      border-radius: 50%;
+      padding: 4px;
+      background: #f8fafc;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      
       :deep(.uploader-component) {
-        width: 100%;
-        height: 100%;
-        display: block;
-
-        .file-uploader {
-          width: 100%;
-          height: 100%;
-        }
-
         .el-avatar {
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-        }
-      }
+          border: 3px solid #ffffff;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+          background: linear-gradient(135deg, #f0f5ff, #e6f0ff);
 
-      .avatar-image {
-        width: 100%;
-        height: 100%;
-        transition: all 0.3s ease;
+          &:hover {
+            border-color: #3699FF;
+            box-shadow: 0 6px 16px rgba(54, 153, 255, 0.15);
+          }
+        }
       }
 
       .avatar-hover-mask {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        color: white;
-        border-radius: 50%;
-        cursor: pointer;
+        background: rgba(54, 153, 255, 0.9);
+        backdrop-filter: blur(2px);
 
         .el-icon {
-          font-size: 24px;
-          margin-bottom: 4px;
+          color: #ffffff;
         }
 
         span {
-          font-size: 12px;
-        }
-      }
-
-      &:hover {
-        .avatar-hover-mask {
-          opacity: 1;
-        }
-
-        .avatar-image {
-          transform: scale(1.05);
+          color: #ffffff;
         }
       }
     }
 
     .user-info {
-      .username {
-        font-size: 1.8em;
-        font-weight: 600;
-        margin: 0 0 8px;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      .username-link {
+        background: #f0f5ff;
+        color: #2c3e50;
+        border: 1px solid rgba(54, 153, 255, 0.1);
+        
+        &:hover {
+          background: #e6f0ff;
+          border-color: rgba(54, 153, 255, 0.2);
+          transform: translateY(-1px);
+        }
+
+        .username {
+          color: #2c3e50;
+          text-shadow: none;
+          font-weight: 600;
+        }
       }
 
       .bio {
-        font-size: 1.1em;
-        opacity: 0.9;
-        margin: 0;
-        max-width: 600px;
-        margin: 0 auto;
+        color: #4a5568;
+        background: #f8fafc;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        text-shadow: none;
+        
+        &:hover {
+          background: #f0f5ff;
+          border-color: rgba(54, 153, 255, 0.1);
+          color: #2c3e50;
+        }
       }
     }
 
     .profile-stats {
-      display: flex;
-      justify-content: center;
-      gap: 32px;
-      margin-top: 24px;
+      background: #f8fafc;
+      border: 1px solid rgba(0, 0, 0, 0.06);
+
+      &:hover {
+        background: #f0f5ff;
+        border-color: rgba(54, 153, 255, 0.1);
+      }
 
       .stat-item {
-        .stat-value {
-          font-size: 1.8em;
+        .number {
+          color: #2c3e50;
+          text-shadow: none;
           font-weight: 600;
-          margin: 0;
-          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .stat-label {
-          font-size: 0.9em;
-          opacity: 0.8;
-          margin: 4px 0 0;
+        .label {
+          color: #718096;
+          text-shadow: none;
         }
       }
     }

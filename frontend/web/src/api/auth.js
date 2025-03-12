@@ -84,4 +84,11 @@ export function resetPassword(data) {
     method: 'post',
     data,
   })
+}
+
+export function getPublicProfile(userId) {
+  return request({
+    url: `/users/${userId}/profile`,
+    method: 'get',
+  })
 } 

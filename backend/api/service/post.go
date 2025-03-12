@@ -234,6 +234,37 @@ func (s *PostService) GetPostsByArchive(yearMonth string) ([]dto.PostResponse, e
 	return responses, nil
 }
 
+// ListUserPosts 获取用户的文章列表
+func (s *PostService) ListUserPosts(userID uint, page, pageSize int) ([]*dto.PostResponse, int64, error) {
+	posts, total, err := s.repo.ListByUserID(userID, page, pageSize)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	responses := make([]*dto.PostResponse, len(posts))
+	for i, post := range posts {
+		// 获取评论数
+		commentCount, err := s.repo.GetCommentCount(post.ID)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		responses[i] = &dto.PostResponse{
+			ID:           post.ID,
+			Title:        post.Title,
+			Summary:      post.Summary,
+			Views:        post.Views,
+			CommentCount: commentCount,
+			CreatedAt:    post.CreatedAt,
+			UpdatedAt:    post.UpdatedAt,
+			Status:       post.Status,
+			PublishedAt:  post.PublishedAt,
+		}
+	}
+
+	return responses, total, nil
+}
+
 // convertToResponse 将文章模型转换为响应DTO
 func (s *PostService) convertToResponse(post *model.Post) (*dto.PostResponse, error) {
 	if post == nil {
