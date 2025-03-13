@@ -227,9 +227,9 @@
   ul, ol {
     padding: 1em 1.2em;
     margin: 1em 0;
-    background: #f8f9fa;
-    border-radius: 12px;
-    border: 1px solid #e5e7eb;
+    // background: #f8f9fa;
+    // border-radius: 12px;
+    // border: 1px solid #e5e7eb;
 
     li {
       margin: 0.5em 0;
@@ -241,7 +241,7 @@
       background: #ffffff;
       border-radius: 8px;
       margin-right: 1em;
-      border: 1px solid #e5e7eb;
+      // border: 1px solid #e5e7eb;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
 
       &::marker {
@@ -249,11 +249,11 @@
         font-weight: 600;
       }
 
-      &:hover {
-        border-color: #8b5cf6;
-        transform: translateX(8px);
-        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
-      }
+      // &:hover {
+      //   border-color: #8b5cf6;
+      //   transform: translateX(8px);
+      //   box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
+      // }
     }
   }
 

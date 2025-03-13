@@ -679,6 +679,177 @@ onMounted(() => {
       border-radius: 16px;
       padding: 40px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+
+      :deep(ol),
+      :deep(ul) {
+        line-height: 1.4;
+        margin: 0.3em 0;
+        padding-left: 1.2em;
+
+        li {
+          margin: 0.1em 0;
+          padding-left: 0.2em;
+          line-height: 1.4;
+
+          &::marker {
+            color: #2B5876;
+          }
+
+          p {
+            margin: 0;
+            line-height: 1.4;
+          }
+        }
+      }
+
+      :deep(pre) {
+        background: #f8fafc;
+        border-radius: 8px;
+        padding: 16px;
+        margin: 1.5em 0;
+        position: relative;
+        border: 1px solid #e2e8f0;
+
+        .pre-wrapper {
+          overflow-x: auto;
+          position: relative;
+
+          &::-webkit-scrollbar {
+            height: 8px;
+            background-color: transparent;
+          }
+
+          &::-webkit-scrollbar-thumb {
+            background: #cbd5e0;
+            border-radius: 4px;
+            
+            &:hover {
+              background: #a0aec0;
+            }
+          }
+
+          &::-webkit-scrollbar-track {
+            background: transparent;
+            border-radius: 4px;
+          }
+        }
+
+        code {
+          padding-right: 85px;
+          display: inline-block;
+          min-width: 100%;
+          font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+          font-size: 0.9em;
+          line-height: 1.5;
+          tab-size: 2;
+        }
+
+        .copy-button {
+          position: absolute;
+          top: 6px;
+          right: 6px;
+          height: 24px;
+          min-width: 70px;
+          padding: 0 10px;
+          font-size: 0.75em;
+          color: #64748b;
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 4px;
+          opacity: 0;
+          transform: translateY(-4px);
+          z-index: 3;
+          font-family: system-ui, -apple-system, sans-serif;
+          font-weight: 500;
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+          backdrop-filter: blur(8px);
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+
+          svg {
+            width: 12px;
+            height: 12px;
+            stroke: currentColor;
+            stroke-width: 2;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+          }
+
+          span {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+
+          &:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+            border-color: #cbd5e0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05),
+                       0 1px 2px rgba(0, 0, 0, 0.1);
+            transform: translateY(0);
+          }
+
+          &:active {
+            transform: translateY(0) scale(0.96);
+            background: #e2e8f0;
+          }
+
+          &.copied {
+            background: #2B5876;
+            color: white;
+            border-color: #1a365d;
+            box-shadow: 0 1px 3px rgba(43, 88, 118, 0.2);
+
+            svg {
+              stroke: white;
+            }
+
+            &:hover {
+              background: #34557a;
+              border-color: #2B5876;
+              box-shadow: 0 2px 4px rgba(43, 88, 118, 0.2),
+                         0 1px 2px rgba(43, 88, 118, 0.1);
+            }
+          }
+        }
+
+        &:hover {
+          .copy-button {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        &[data-language]::before {
+          content: attr(data-language);
+          position: absolute;
+          top: 6px;
+          left: 16px;
+          font-size: 0.7em;
+          color: #64748b;
+          font-weight: 500;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+      }
+
+      :deep(code:not(pre code)) {
+        padding: 0.2em 0.4em;
+        margin: 0;
+        font-size: 0.85em;
+        background: rgba(43, 88, 118, 0.06);
+        border-radius: 3px;
+        font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+        color: #2B5876;
+      }
     }
   }
 }

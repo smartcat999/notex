@@ -314,8 +314,6 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss">
-@import '@/styles/post-content.scss';
-
 .post-detail-container {
   max-width: 900px;
   margin: 0 auto;
@@ -513,21 +511,15 @@ onUnmounted(() => {
       font-weight: 600;
       line-height: 1.3;
       letter-spacing: -0.02em;
-      transition: none;
-      transform: none;
 
       &:first-child {
         margin-top: 0.5em;
-      }
-
-      &:hover {
-        transform: none;
       }
     }
 
     h1 {
       font-size: 2.4em;
-      color: #2c3e50;
+      color: #1a365d;
       margin: 1em 0 0.8em;
       position: relative;
       font-weight: 700;
@@ -539,14 +531,14 @@ onUnmounted(() => {
         left: 0;
         width: 80px;
         height: 4px;
-        background: linear-gradient(90deg, #2c3e50, rgba(44, 62, 80, 0.1));
+        background: linear-gradient(90deg, #1a365d, rgba(26, 54, 93, 0.1));
         border-radius: 2px;
       }
     }
 
     h2 {
       font-size: 1.8em;
-      color: #34495e;
+      color: #2d4a6d;
       margin: 1.8em 0 0.8em;
       position: relative;
       font-weight: 600;
@@ -558,14 +550,14 @@ onUnmounted(() => {
         left: 0;
         width: 60px;
         height: 3px;
-        background: linear-gradient(90deg, rgba(52, 73, 94, 0.8), rgba(52, 73, 94, 0.1));
+        background: linear-gradient(90deg, rgba(45, 74, 109, 0.8), rgba(45, 74, 109, 0.1));
         border-radius: 1.5px;
       }
     }
 
     h3 {
       font-size: 1.4em;
-      color: #3c4858;
+      color: #34557a;
       margin: 1.5em 0 0.8em;
       position: relative;
       padding-left: 1em;
@@ -578,28 +570,28 @@ onUnmounted(() => {
         top: 0.2em;
         bottom: 0.2em;
         width: 3px;
-        background: linear-gradient(180deg, #3c4858, rgba(60, 72, 88, 0.2));
+        background: linear-gradient(180deg, #34557a, rgba(52, 85, 122, 0.2));
         border-radius: 1.5px;
       }
     }
 
     h4 {
       font-size: 1.2em;
-      color: #4a5568;
+      color: #3d5a7a;
       margin: 1.2em 0 0.6em;
       font-weight: 600;
     }
 
     h5 {
       font-size: 1.1em;
-      color: #4a5568;
+      color: #456789;
       margin: 1em 0 0.5em;
       font-weight: 500;
     }
 
     h6 {
       font-size: 1em;
-      color: #4a5568;
+      color: #516b88;
       margin: 1em 0 0.5em;
       font-weight: 500;
     }
@@ -663,12 +655,28 @@ onUnmounted(() => {
         min-width: 100%;
       }
 
+      &::before {
+        content: attr(data-language);
+        position: absolute;
+        top: 8px;
+        right: 85px;
+        font-size: 0.7em;
+        color: #94a3b8;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 500;
+        background: #f1f5f9;
+        padding: 2px 6px;
+        border-radius: 3px;
+        border: 1px solid #e2e8f0;
+        z-index: 2;
+      }
+
       .copy-button {
         position: absolute;
         top: 6px;
         right: 6px;
         height: 24px;
-        min-width: 70px;
         padding: 0 10px;
         font-size: 0.75em;
         color: #64748b;
@@ -677,9 +685,8 @@ onUnmounted(() => {
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        display: inline-flex;
+        display: flex;
         align-items: center;
-        justify-content: center;
         gap: 4px;
         opacity: 0;
         transform: translateY(-4px);
@@ -688,9 +695,6 @@ onUnmounted(() => {
         font-weight: 500;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
         backdrop-filter: blur(8px);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
 
         svg {
           width: 12px;
@@ -698,13 +702,6 @@ onUnmounted(() => {
           stroke: currentColor;
           stroke-width: 2;
           transition: all 0.2s ease;
-          flex-shrink: 0;
-        }
-
-        span {
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
         }
 
         &:hover {
@@ -729,6 +726,7 @@ onUnmounted(() => {
 
           svg {
             stroke: white;
+            transform: scale(1.1);
           }
 
           &:hover {
@@ -795,102 +793,13 @@ onUnmounted(() => {
     }
 
     ol {
-      list-style: none;
-      counter-reset: markdown-counter;
-      padding-left: 2em;
-      border: none;
-
-      li {
-        position: relative;
-        counter-increment: markdown-counter;
-        margin: 0.5em 0;
-        padding: 0;
-        border: none !important;
-        background: none;
-        box-shadow: none;
-        transition: none;
-        transform: none;
-        outline: none;
-        text-decoration: none;
-        list-style: none;
-
-        &:hover, &:focus, &:active {
-          transform: none;
-          border: none !important;
-          outline: none;
-          text-decoration: none;
-          background: none;
-          box-shadow: none;
-        }
-
-        &::before {
-          content: counter(markdown-counter) ".";
-          position: absolute;
-          left: -2em;
-          width: 1.5em;
-          text-align: right;
-          color: #4a5568;
-          font-weight: 500;
-          border: none;
-          background: none;
-          box-shadow: none;
-        }
-
-        > * {
-          border: none !important;
-          margin: 0;
-          padding: 0;
-          background: none;
-          box-shadow: none;
-          transition: none;
-          transform: none;
-          outline: none;
-          text-decoration: none;
-        }
-      }
+      list-style: decimal;
+      padding-left: 1.5em;
     }
 
     ul {
       list-style: disc;
       padding-left: 1.5em;
-
-      li {
-        border: none;
-        outline: none;
-        text-decoration: none;
-        margin: 0.5em 0;
-        padding: 0;
-        background: none;
-        box-shadow: none;
-        transition: none;
-        transform: none;
-
-        &:hover {
-          transform: none;
-          border: none;
-          outline: none;
-          text-decoration: none;
-        }
-
-        p {
-          margin: 0;
-          padding: 0;
-          border: none;
-          background: none;
-          box-shadow: none;
-          transition: none;
-          transform: none;
-          outline: none;
-          text-decoration: none;
-
-          &:hover {
-            transform: none;
-            border: none;
-            outline: none;
-            text-decoration: none;
-          }
-        }
-      }
     }
 
     table {
