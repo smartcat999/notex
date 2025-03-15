@@ -52,7 +52,7 @@
                 <el-icon><Document /></el-icon>
                 草稿箱
               </el-dropdown-item>
-              <el-dropdown-item @click="$router.push('/ai-toolbox')">
+              <el-dropdown-item @click="$router.push('/ai/chat')">
                 <el-icon><DataLine /></el-icon>
                 AI工具箱
               </el-dropdown-item>
