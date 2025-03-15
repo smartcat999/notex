@@ -86,7 +86,8 @@
               >
                 {{ comment.user?.username }}
               </router-link>
-              <span class="author-tag" v-if="comment.user?.id === post.author?.id">作者</span>
+              <span v-if="comment.user?.id === post.author?.id" class="tag author-tag">作者</span>
+              <span v-else-if="isCurrentUserComment(comment)" class="tag current-user-tag">我</span>
               <span class="time">{{ formatDate(comment.created_at) }}</span>
             </div>
           </div>
@@ -143,7 +144,8 @@
                   >
                     {{ reply.user?.username }}
                   </router-link>
-                  <span class="author-tag" v-if="reply.user?.id === post.author?.id">作者</span>
+                  <span v-if="reply.user?.id === post.author?.id" class="tag author-tag">作者</span>
+                  <span v-else-if="isCurrentUserComment(reply)" class="tag current-user-tag">我</span>
                   <span class="time">{{ formatDate(reply.created_at) }}</span>
                 </div>
               </div>
@@ -370,7 +372,10 @@ const fetchComments = async () => {
       page_size: pageSize.value,
     }
     const response = await getComments(route.params.id, params)
-    comments.value = response.items || []
+    comments.value = (response.items || []).map(comment => ({
+      ...comment,
+      isExpanded: false
+    }))
     total.value = response.total || 0
   } catch (error) {
     console.error('Failed to fetch comments:', error)
@@ -469,7 +474,10 @@ const toggleReplies = (comment) => {
 const loadReplies = async (comment) => {
   try {
     const response = await getReplies(comment.id)
-    comment.children = response.items || []
+    comment.children = (response.items || []).map(reply => ({
+      ...reply,
+      isExpanded: false
+    }))
     comment.isExpanded = true // 加载后默认展开
   } catch (error) {
     console.error('Failed to load replies:', error)
@@ -479,7 +487,7 @@ const loadReplies = async (comment) => {
 
 // 判断是否是当前用户的评论
 const isCurrentUserComment = (comment) => {
-  return userStore.user?.id === comment.user_id
+  return userStore.isAuthenticated && userStore.user?.id === comment.user?.id
 }
 
 onMounted(() => {
@@ -1171,13 +1179,27 @@ onUnmounted(() => {
             }
           }
 
-          .author-tag {
-            font-size: 0.75em;
-            padding: 2px 6px;
-            background: rgba(43, 88, 118, 0.08);
-            color: #2B5876;
-            border-radius: 4px;
+          .tag {
+            font-size: 12px;
+            padding: 0 8px;
+            height: 20px;
+            line-height: 20px;
+            border-radius: 10px;
             font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+          }
+
+          .author-tag {
+            background: rgba(43, 88, 118, 0.1);
+            color: #2B5876;
+          }
+
+          .current-user-tag {
+            background: rgba(54, 153, 255, 0.1);
+            color: #3699FF;
           }
 
           .time {
@@ -1192,6 +1214,18 @@ onUnmounted(() => {
         line-height: 1.6;
         padding-left: 51px;
         font-size: 0.9em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .current-user-tag {
+          font-size: 0.75em;
+          padding: 2px 6px;
+          background: rgba(43, 88, 118, 0.08);
+          color: #2B5876;
+          border-radius: 4px;
+          font-weight: 500;
+        }
       }
 
       .comment-actions {
@@ -1286,13 +1320,22 @@ onUnmounted(() => {
           }
         }
 
-        .author-tag {
-          font-size: 0.75em;
-          padding: 2px 6px;
-          background: rgba(43, 88, 118, 0.08);
-          color: #2B5876;
-          border-radius: 4px;
+        .tag {
+          font-size: 12px;
+          padding: 0 8px;
+          height: 20px;
+          line-height: 20px;
+          border-radius: 10px;
           font-weight: 500;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
+        }
+
+        .author-tag {
+          background: rgba(43, 88, 118, 0.1);
+          color: #2B5876;
         }
         
         .time {
