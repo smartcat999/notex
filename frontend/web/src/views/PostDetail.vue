@@ -1045,6 +1045,30 @@ onUnmounted(() => {
   border-radius: 16px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.04);
 
+  /* 共享标签样式 */
+  .tag {
+    font-size: 12px;
+    padding: 0 8px;
+    height: 20px;
+    line-height: 20px;
+    border-radius: 10px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+
+  .author-tag {
+    background: rgba(43, 88, 118, 0.1);
+    color: #2B5876;
+  }
+
+  .current-user-tag {
+    background: rgba(54, 153, 255, 0.1);
+    color: #3699FF;
+  }
+
   h2 {
     margin-bottom: 20px;
     font-size: 1.3em;
@@ -1179,29 +1203,6 @@ onUnmounted(() => {
             }
           }
 
-          .tag {
-            font-size: 12px;
-            padding: 0 8px;
-            height: 20px;
-            line-height: 20px;
-            border-radius: 10px;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-          }
-
-          .author-tag {
-            background: rgba(43, 88, 118, 0.1);
-            color: #2B5876;
-          }
-
-          .current-user-tag {
-            background: rgba(54, 153, 255, 0.1);
-            color: #3699FF;
-          }
-
           .time {
             color: #718096;
             font-size: 0.9em;
@@ -1217,15 +1218,6 @@ onUnmounted(() => {
         display: flex;
         align-items: center;
         gap: 8px;
-
-        .current-user-tag {
-          font-size: 0.75em;
-          padding: 2px 6px;
-          background: rgba(43, 88, 118, 0.08);
-          color: #2B5876;
-          border-radius: 4px;
-          font-weight: 500;
-        }
       }
 
       .comment-actions {
@@ -1318,24 +1310,6 @@ onUnmounted(() => {
           &:hover {
             color: #2B5876;
           }
-        }
-
-        .tag {
-          font-size: 12px;
-          padding: 0 8px;
-          height: 20px;
-          line-height: 20px;
-          border-radius: 10px;
-          font-weight: 500;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.3s ease;
-        }
-
-        .author-tag {
-          background: rgba(43, 88, 118, 0.1);
-          color: #2B5876;
         }
         
         .time {
