@@ -1,5 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import AILayout from '@/components/ai/AILayout.vue'
+import AIChat from '@/components/ai/AIChat.vue'
+import AISettings from '@/components/ai/AISettings.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -92,6 +95,24 @@ const router = createRouter({
       name: 'Drafts',
       component: () => import('@/views/Drafts.vue'),
       meta: { requiresAuth: true }
+    },
+    {
+      path: '/ai',
+      component: () => import('@/components/ai/AILayout.vue'),
+      children: [
+        {
+          path: 'chat',
+          component: () => import('@/components/ai/AIChat.vue')
+        },
+        {
+          path: 'settings',
+          component: () => import('@/components/ai/AISettings.vue')
+        },
+        {
+          path: 'word-polish',
+          component: () => import('@/components/ai/WordPolish.vue')
+        }
+      ]
     },
     {
       path: '/:pathMatch(.*)*',

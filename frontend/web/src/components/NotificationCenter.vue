@@ -17,9 +17,9 @@
       <h3>通知中心</h3>
       <div class="notification-actions">
         <el-radio-group v-model="currentType" size="small" @change="handleTypeChange">
-          <el-radio-button label="">全部</el-radio-button>
-          <el-radio-button label="post_comment">评论</el-radio-button>
-          <el-radio-button label="comment_reply">回复</el-radio-button>
+          <el-radio-button value="">全部</el-radio-button>
+          <el-radio-button value="post_comment">评论</el-radio-button>
+          <el-radio-button value="comment_reply">回复</el-radio-button>
         </el-radio-group>
         <el-button 
           v-if="notifications.length > 0"

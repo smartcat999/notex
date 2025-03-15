@@ -52,6 +52,10 @@
                 <el-icon><Document /></el-icon>
                 草稿箱
               </el-dropdown-item>
+              <el-dropdown-item @click="$router.push('/ai-toolbox')">
+                <el-icon><DataLine /></el-icon>
+                AI工具箱
+              </el-dropdown-item>
               <el-dropdown-item @click="$router.push('/settings')">
                 <el-icon><Setting /></el-icon>
                 设置
@@ -80,7 +84,8 @@ import {
   EditPen,
   User,
   Setting,
-  SwitchButton
+  SwitchButton,
+  DataLine
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import NotificationCenter from '@/components/NotificationCenter.vue'
