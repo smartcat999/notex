@@ -31,6 +31,8 @@
           写文章
         </el-button>
 
+        <NotificationCenter />
+
         <el-dropdown trigger="click" class="user-dropdown">
           <div class="user-info">
             <el-avatar :size="32" :src="userAvatar">
@@ -81,6 +83,7 @@ import {
   SwitchButton
 } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import NotificationCenter from '@/components/NotificationCenter.vue'
 
 const router = useRouter()
 const userStore = useUserStore()

@@ -93,6 +93,108 @@
           <div class="comment-content">
             {{ comment.content }}
           </div>
+          <div class="comment-actions">
+            <el-button 
+              link 
+              type="primary" 
+              size="small"
+              @click="handleReplyClick(comment)"
+            >
+              回复
+            </el-button>
+            <el-button
+              v-if="comment.reply_count > 0 && (!comment.children || comment.children.length === 0)"
+              link
+              type="primary"
+              size="small"
+              @click="loadReplies(comment)"
+            >
+              <el-icon><ChatDotRound /></el-icon>
+              展开 {{ comment.reply_count }} 条回复
+            </el-button>
+            <el-button
+              v-if="comment.children && comment.children.length > 0"
+              link
+              type="primary"
+              size="small"
+              @click="toggleReplies(comment)"
+            >
+              <el-icon><ArrowUp v-if="comment.isExpanded" /><ArrowDown v-else /></el-icon>
+              {{ comment.isExpanded ? '收起' : '展开' }} {{ comment.reply_count }} 条回复
+            </el-button>
+          </div>
+
+          <!-- 回复列表 -->
+          <div v-if="comment.children && comment.children.length > 0 && comment.isExpanded" class="replies-list">
+            <div v-for="reply in comment.children" :key="reply.id" class="reply-item">
+              <div class="reply-header">
+                <router-link 
+                  :to="`/users/${reply.user?.id}`" 
+                  class="avatar-link"
+                >
+                  <el-avatar :size="32" :src="reply.user?.avatar">
+                    {{ reply.user?.username?.charAt(0) }}
+                  </el-avatar>
+                </router-link>
+                <div class="reply-info">
+                  <router-link 
+                    :to="`/users/${reply.user?.id}`" 
+                    class="username"
+                  >
+                    {{ reply.user?.username }}
+                  </router-link>
+                  <span class="author-tag" v-if="reply.user?.id === post.author?.id">作者</span>
+                  <span class="time">{{ formatDate(reply.created_at) }}</span>
+                </div>
+              </div>
+              <div class="reply-content">
+                <span class="reply-to">
+                  回复 
+                  <template v-if="reply.parent && reply.parent.id !== comment.id">
+                    <router-link :to="`/users/${reply.parent.user?.id}`">@{{ reply.parent.user?.username }}</router-link>
+                    的回复：
+                  </template>
+                  <template v-else>
+                    <router-link :to="`/users/${comment.user?.id}`">@{{ comment.user?.username }}</router-link>：
+                  </template>
+                </span>
+                {{ reply.content }}
+              </div>
+              <div class="reply-actions">
+                <el-button 
+                  link 
+                  type="primary" 
+                  size="small"
+                  @click="handleReplyClick(comment, reply)"
+                >
+                  回复
+                </el-button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 回复表单 -->
+          <div v-if="replyingTo?.id === comment.id" class="reply-form">
+            <el-input
+              v-model="replyContent"
+              type="textarea"
+              :rows="2"
+              :placeholder="replyPlaceholder"
+              :maxlength="500"
+              show-word-limit
+            />
+            <div class="reply-form-actions">
+              <el-button size="small" @click="cancelReply">取消</el-button>
+              <el-button 
+                type="primary" 
+                size="small" 
+                :loading="submitting"
+                @click="handleSubmitReply"
+              >
+                发表回复
+              </el-button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -115,10 +217,10 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { Calendar, View, ChatDotRound, User } from '@element-plus/icons-vue'
+import { Calendar, View, ChatDotRound, User, ArrowUp, ArrowDown } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/date'
 import { useUserStore } from '@/stores/user'
-import { getPost, getComments, createComment } from '@/api/posts'
+import { getPost, getComments, createComment, getReplies } from '@/api/posts'
 import { marked } from 'marked'
 import hljs from 'highlight.js'
 import { ElMessage } from 'element-plus'
@@ -133,10 +235,22 @@ const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
 const commentContent = ref('')
+const replyContent = ref('')
 const submitting = ref(false)
 const contentRef = ref(null)
 const codeSections = ref([])
 const copiedIndex = ref(-1)
+
+// 回复相关
+const replyingTo = ref(null)
+const replyingToReply = ref(null)
+
+const replyPlaceholder = computed(() => {
+  if (replyingToReply.value) {
+    return `回复 @${replyingToReply.value.user?.username}：`
+  }
+  return '写下你的回复...'
+})
 
 // 配置 marked
 marked.setOptions({
@@ -292,6 +406,50 @@ const handleSubmitComment = async () => {
   }
 }
 
+const handleReplyClick = (comment, reply = null) => {
+  if (!userStore.isAuthenticated) {
+    ElMessage.warning('请先登录后再回复')
+    return
+  }
+  replyingTo.value = comment
+  replyingToReply.value = reply
+  replyContent.value = ''
+}
+
+const cancelReply = () => {
+  replyingTo.value = null
+  replyingToReply.value = null
+  replyContent.value = ''
+}
+
+const handleSubmitReply = async () => {
+  if (!replyContent.value.trim()) {
+    ElMessage.warning('回复内容不能为空')
+    return
+  }
+
+  try {
+    submitting.value = true
+    await createComment(route.params.id, {
+      content: replyContent.value.trim(),
+      parent_id: replyingTo.value.id,
+      reply_to_id: replyingToReply.value?.id
+    })
+    ElMessage.success('回复发表成功')
+    replyContent.value = ''
+    cancelReply()
+    // 重新获取评论列表
+    await fetchComments()
+    // 更新文章的评论数
+    post.value.comment_count = (post.value.comment_count || 0) + 1
+  } catch (error) {
+    console.error('Failed to create reply:', error)
+    ElMessage.error('回复发表失败')
+  } finally {
+    submitting.value = false
+  }
+}
+
 const handleSizeChange = (val) => {
   pageSize.value = val
   fetchComments()
@@ -300,6 +458,28 @@ const handleSizeChange = (val) => {
 const handleCurrentChange = (val) => {
   currentPage.value = val
   fetchComments()
+}
+
+// 切换回复列表的展开/折叠状态
+const toggleReplies = (comment) => {
+  comment.isExpanded = !comment.isExpanded
+}
+
+// 加载回复
+const loadReplies = async (comment) => {
+  try {
+    const response = await getReplies(comment.id)
+    comment.children = response.items || []
+    comment.isExpanded = true // 加载后默认展开
+  } catch (error) {
+    console.error('Failed to load replies:', error)
+    ElMessage.error('获取回复失败')
+  }
+}
+
+// 判断是否是当前用户的评论
+const isCurrentUserComment = (comment) => {
+  return userStore.user?.id === comment.user_id
 }
 
 onMounted(() => {
@@ -1012,6 +1192,209 @@ onUnmounted(() => {
         line-height: 1.6;
         padding-left: 51px;
         font-size: 0.9em;
+      }
+
+      .comment-actions {
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding-left: 51px;
+
+        .reply-count {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 0.85em;
+          color: #718096;
+          padding: 4px 8px;
+          background: rgba(43, 88, 118, 0.04);
+          border-radius: 12px;
+          transition: all 0.3s ease;
+
+          .el-icon {
+            font-size: 0.9em;
+            color: #2B5876;
+          }
+
+          &:hover {
+            background: rgba(43, 88, 118, 0.08);
+            color: #2B5876;
+            transform: translateY(-1px);
+          }
+        }
+      }
+    }
+
+    .replies-list {
+      margin-left: 52px;
+      margin-top: 16px;
+      padding-left: 20px;
+      border-left: 2px solid rgba(43, 88, 118, 0.1);
+      background: rgba(43, 88, 118, 0.02);
+      border-radius: 0 12px 12px 0;
+
+      .reply-item {
+        padding: 16px;
+        position: relative;
+        transition: all 0.3s ease;
+        
+        &:not(:last-child) {
+          border-bottom: 1px solid rgba(43, 88, 118, 0.08);
+        }
+
+        &:hover {
+          background: rgba(43, 88, 118, 0.03);
+          transform: translateX(4px);
+        }
+      }
+
+      .reply-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+
+        .avatar-link {
+          text-decoration: none;
+          transition: transform 0.3s ease;
+          
+          &:hover {
+            transform: scale(1.05);
+          }
+
+          .el-avatar {
+            border: 2px solid #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+          }
+        }
+      }
+
+      .reply-info {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        
+        .username {
+          color: #2c3e50;
+          font-weight: 500;
+          text-decoration: none;
+          transition: all 0.3s ease;
+          
+          &:hover {
+            color: #2B5876;
+          }
+        }
+
+        .author-tag {
+          font-size: 0.75em;
+          padding: 2px 6px;
+          background: rgba(43, 88, 118, 0.08);
+          color: #2B5876;
+          border-radius: 4px;
+          font-weight: 500;
+        }
+        
+        .time {
+          color: #718096;
+          font-size: 0.85em;
+        }
+      }
+
+      .reply-content {
+        color: #4b5563;
+        line-height: 1.6;
+        font-size: 0.95em;
+        padding: 4px 0;
+
+        .reply-to {
+          color: #718096;
+          margin-right: 4px;
+          font-size: 0.9em;
+          
+          a {
+            color: #2B5876;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            
+            &:hover {
+              color: #1a365d;
+              text-decoration: underline;
+            }
+          }
+        }
+      }
+
+      .reply-actions {
+        margin-top: 8px;
+        display: flex;
+        gap: 12px;
+
+        .el-button {
+          padding: 4px 8px;
+          font-size: 0.85em;
+          
+          &:hover {
+            background: rgba(43, 88, 118, 0.05);
+          }
+        }
+      }
+    }
+
+    .reply-form {
+      margin-top: 16px;
+      margin-left: 52px;
+      padding: 16px;
+      background: rgba(43, 88, 118, 0.03);
+      border-radius: 12px;
+      border: 1px solid rgba(43, 88, 118, 0.08);
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: rgba(43, 88, 118, 0.04);
+      }
+
+      .el-input__inner {
+        border: 1px solid rgba(43, 88, 118, 0.1);
+        transition: all 0.3s ease;
+
+        &:focus {
+          border-color: #2B5876;
+          box-shadow: 0 0 0 2px rgba(43, 88, 118, 0.1);
+        }
+      }
+    }
+
+    .reply-form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 12px;
+
+      .el-button {
+        padding: 6px 16px;
+        font-size: 0.9em;
+        border-radius: 6px;
+        
+        &--default {
+          background: #f8fafc;
+          border: 1px solid #e2e8f0;
+          
+          &:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e0;
+          }
+        }
+        
+        &--primary {
+          background: #2B5876;
+          border: none;
+          
+          &:hover {
+            background: #1a365d;
+          }
+        }
       }
     }
   }

@@ -45,6 +45,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	postService := service.NewPostService()
 	tagService := service.NewTagService()
 	verificationService := service.NewVerificationService()
+	notificationService := service.NewNotificationService()
 
 	// 创建存储实例
 	storageInstance, err := storage.DefaultFactory.CreateStorage(&cfg.Storage)
@@ -87,6 +88,9 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 			public.GET("/posts/:id/comments", commentHandler.ListComments)
 			public.GET("/posts/archives", postHandler.GetArchives)
 			public.GET("/posts/archives/:yearMonth", postHandler.GetPostsByArchive)
+
+			// 评论回复接口
+			public.GET("/comments/:id/replies", commentHandler.GetCommentReplies)
 
 			// 分类和标签的公开接口
 			public.GET("/categories", categoryHandler.ListCategories)
@@ -177,6 +181,13 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 			// 管理员路由
 			adminHandler := handler.NewAdminHandler(adminService)
 			adminHandler.RegisterRoutes(authenticated)
+
+			// 通知相关路由
+			notificationHandler := handler.NewNotificationHandler(notificationService)
+			authenticated.GET("/notifications", notificationHandler.ListNotifications)
+			authenticated.PUT("/notifications/:id/read", notificationHandler.MarkAsRead)
+			authenticated.PUT("/notifications/read-all", notificationHandler.MarkAllAsRead)
+			authenticated.GET("/notifications/unread-count", notificationHandler.GetUnreadCount)
 		}
 	}
 

@@ -231,3 +231,11 @@ export function getUserPublicPosts(userId, params) {
     }
   })
 }
+
+// 获取评论回复列表
+export function getReplies(commentId) {
+  return request({
+    url: `/public/comments/${commentId}/replies`,
+    method: 'get'
+  })
+}

@@ -2,9 +2,10 @@ package handler
 
 import (
 	"net/http"
+	"strconv"
+
 	"notex/api/dto"
 	"notex/api/service"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -53,8 +54,8 @@ func (h *CommentHandler) CreateComment(c *gin.Context) {
 		return
 	}
 
-	var req dto.CreateCommentRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
+	var createReq dto.CreateCommentRequest
+	if err := c.ShouldBindJSON(&createReq); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -66,7 +67,14 @@ func (h *CommentHandler) CreateComment(c *gin.Context) {
 		return
 	}
 
-	comment, err := h.service.CreateComment(userID.(uint), uint(postID), &req)
+	// 转换为 CommentRequest
+	req := &dto.CommentRequest{
+		Content:   createReq.Content,
+		ParentID:  createReq.ParentID,
+		ReplyToID: createReq.ReplyToID,
+	}
+
+	comment, err := h.service.CreateComment(userID.(uint), uint(postID), req)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -115,5 +123,26 @@ func (h *CommentHandler) ListUserComments(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"items": comments,
 		"total": total,
+	})
+}
+
+// GetCommentReplies 获取评论的回复列表
+func (h *CommentHandler) GetCommentReplies(c *gin.Context) {
+	// 获取评论ID
+	commentID, err := strconv.ParseUint(c.Param("id"), 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid comment id"})
+		return
+	}
+
+	// 获取回复列表
+	replies, err := h.service.GetCommentReplies(uint(commentID))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get replies"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"items": replies,
 	})
 }
