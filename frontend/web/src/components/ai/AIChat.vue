@@ -46,12 +46,19 @@
                   <div class="user-message">{{ message.content }}</div>
                 </template>
                 <template v-else>
-                  <div class="markdown-body" v-html="formatMessage(message.content)"></div>
-                  <span v-if="message.isStreaming || (aiStore.isLoading && message === messages[messages.length - 1])" class="typing-indicator">
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                  </span>
+                  <div class="ai-message">
+                    <div v-if="message.isStreaming" class="streaming-content">
+                      {{ message.content }}
+                      <span class="typing-indicator">
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                        <span class="dot"></span>
+                      </span>
+                    </div>
+                    <div v-else>
+                      {{ message.content }}
+                    </div>
+                  </div>
                 </template>
               </div>
               <div class="message-actions" v-if="message.role === 'user'">
@@ -950,5 +957,34 @@ const handleStop = () => {
   .hljs-selector-class {
     color: #61afef;
   }
+}
+
+.streaming-content {
+  display: inline-block;
+  white-space: pre-wrap;
+  
+  .typing-indicator {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 4px;
+    padding: 0;
+    
+    .dot {
+      width: 4px;
+      height: 4px;
+      margin: 0 1px;
+      background-color: #e0e0e0;
+      border-radius: 50%;
+      animation: typing 1s infinite;
+      
+      &:nth-child(2) { animation-delay: 0.2s; }
+      &:nth-child(3) { animation-delay: 0.4s; }
+    }
+  }
+}
+
+@keyframes typing {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 </style> 

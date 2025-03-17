@@ -183,24 +183,26 @@ export const useAIStore = defineStore('ai', () => {
       }
       messages.value.push(aiMessage)
 
-      const response = await aiService.sendChat(
+      // 发送消息并处理流式响应
+      await aiService.sendChat(
         messageArray,
         currentModel.value,
         currentProvider.value,
         currentController.value.signal,
         (chunk) => {
           if (chunk) {
+            // 更新 AI 消息内容
             aiMessage.content += chunk
+            // 触发进度回调
             if (onProgress) {
               onProgress(aiMessage.content)
             }
+            // 强制更新视图
+            messages.value = [...messages.value]
           }
         }
       )
 
-      if (response) {
-        aiMessage.content = response
-      }
     } catch (error) {
       if (error.name === 'AbortError') {
         // 请求被取消，移除 AI 响应消息
