@@ -47,7 +47,7 @@
                 </template>
                 <template v-else>
                   <div class="markdown-body" v-html="formatMessage(message.content)"></div>
-                  <span v-if="message.isStreaming" class="typing-indicator">
+                  <span v-if="message.isStreaming || (aiStore.isLoading && message === messages[messages.length - 1])" class="typing-indicator">
                     <span class="dot"></span>
                     <span class="dot"></span>
                     <span class="dot"></span>
@@ -658,28 +658,27 @@ const handleStop = () => {
 }
 
 .typing-indicator {
-  display: flex;
-  gap: 4px;
-  padding: 12px;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  padding: 0;
   
-  span {
-    width: 6px;
-    height: 6px;
+  .dot {
+    width: 4px;
+    height: 4px;
+    margin: 0 1px;
+    background-color: #e0e0e0;
     border-radius: 50%;
-    background: linear-gradient(135deg, #2B5876 0%, #4E4376 100%);
-    animation: typing 1.4s infinite ease-in-out both;
-    opacity: 0.7;
+    animation: typing 1s infinite;
     
-    &:nth-child(1) { animation-delay: 0s; }
     &:nth-child(2) { animation-delay: 0.2s; }
     &:nth-child(3) { animation-delay: 0.4s; }
   }
 }
 
 @keyframes typing {
-  0% { transform: scale(0.8); opacity: 0.4; }
-  50% { transform: scale(1.2); opacity: 0.8; }
-  100% { transform: scale(0.8); opacity: 0.4; }
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 
 .message-text {

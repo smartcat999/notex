@@ -132,7 +132,7 @@ export const useAIStore = defineStore('ai', () => {
     return model ? model.provider : ''
   })
   
-  // 修改 sendMessage 方法，添加可选的 messageIndex 参数
+  // 修改 sendMessage 方法
   const sendMessage = async (content, existingMessageIndex = -1, onProgress = null) => {
     try {
       // 验证消息内容
@@ -173,24 +173,22 @@ export const useAIStore = defineStore('ai', () => {
         content: content.trim()
       }]
 
+      // 创建 AI 响应消息
+      const aiMessage = {
+        id: Date.now() + 1,
+        role: 'assistant',
+        content: '',
+        timestamp: new Date().toISOString(),
+        isStreaming: true
+      }
+      messages.value.push(aiMessage)
+
       const response = await aiService.sendChat(
         messageArray,
         currentModel.value,
         currentProvider.value,
         currentController.value.signal,
         (chunk) => {
-          // 创建或更新 AI 响应消息
-          let aiMessage = messages.value.find(msg => msg.role === 'assistant')
-          if (!aiMessage) {
-            aiMessage = {
-              id: Date.now() + 1,
-              role: 'assistant',
-              content: '',
-              timestamp: new Date().toISOString()
-            }
-            messages.value.push(aiMessage)
-          }
-          
           if (chunk) {
             aiMessage.content += chunk
             if (onProgress) {
@@ -201,17 +199,6 @@ export const useAIStore = defineStore('ai', () => {
       )
 
       if (response) {
-        // 确保 AI 响应消息存在
-        let aiMessage = messages.value.find(msg => msg.role === 'assistant')
-        if (!aiMessage) {
-          aiMessage = {
-            id: Date.now() + 1,
-            role: 'assistant',
-            content: '',
-            timestamp: new Date().toISOString()
-          }
-          messages.value.push(aiMessage)
-        }
         aiMessage.content = response
       }
     } catch (error) {
@@ -224,6 +211,11 @@ export const useAIStore = defineStore('ai', () => {
     } finally {
       isLoading.value = false
       currentController.value = null
+      // 移除 isStreaming 状态
+      const aiMessage = messages.value.find(msg => msg.role === 'assistant')
+      if (aiMessage) {
+        aiMessage.isStreaming = false
+      }
     }
   }
   
