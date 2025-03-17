@@ -359,8 +359,8 @@ const handleStop = () => {
   flex-direction: column;
   height: 100vh;
   background-color: #171717;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
   position: relative;
   
   .ai-chat-header {
@@ -368,28 +368,29 @@ const handleStop = () => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 24px;
+    padding: 20px 24px;
     background: linear-gradient(180deg, #1f1f1f 0%, #1a1a1a 100%);
     border-bottom: 1px solid #2a2a2a;
-    border-radius: 12px 12px 0 0;
+    border-radius: 16px 16px 0 0;
     height: 64px;
     
     .model-selector {
-      width: 200px;
+      width: 240px;
       
       :deep(.el-input__wrapper) {
         background-color: #252525;
         border: 1px solid #2a2a2a;
         box-shadow: none;
         transition: all 0.3s ease;
+        border-radius: 8px;
         
         &:hover {
-          border-color: #409EFF;
+          border-color: #2B5876;
         }
         
         &.is-focus {
-          border-color: #409EFF;
-          box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
+          border-color: #2B5876;
+          box-shadow: 0 0 0 3px rgba(43, 88, 118, 0.1);
         }
         
         .el-input__inner {
@@ -403,11 +404,13 @@ const handleStop = () => {
       border: 1px solid #2a2a2a;
       color: #a0a0a0;
       transition: all 0.3s ease;
+      border-radius: 8px;
+      padding: 8px 16px;
       
       &:hover {
         background-color: #2a2a2a;
-        border-color: #409EFF;
-        color: #409EFF;
+        border-color: #2B5876;
+        color: #2B5876;
       }
     }
   }
@@ -417,7 +420,7 @@ const handleStop = () => {
     overflow-y: auto;
     padding: 24px;
     background-color: #171717;
-    border-radius: 12px;
+    border-radius: 16px;
     margin: 16px;
     margin-bottom: 0;
     height: calc(100vh - 64px - 160px - 32px);
@@ -453,6 +456,7 @@ const handleStop = () => {
       .empty-icon {
         font-size: 48px;
         margin-bottom: 16px;
+        color: #2B5876;
       }
       
       p {
@@ -472,8 +476,8 @@ const handleStop = () => {
       .message-content {
         flex: 1;
         background-color: #1f1f1f;
-        padding: 16px;
-        border-radius: 12px;
+        padding: 20px;
+        border-radius: 16px;
         border: 1px solid #2a2a2a;
         color: #e0e0e0;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -481,7 +485,7 @@ const handleStop = () => {
         
         &:hover {
           border-color: #2B5876;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 4px 12px rgba(43, 88, 118, 0.1);
         }
         
         .message-container {
@@ -503,7 +507,7 @@ const handleStop = () => {
                   width: 4px;
                   height: 4px;
                   margin: 0 1px;
-                  background-color: #e0e0e0;
+                  background-color: #2B5876;
                   border-radius: 50%;
                   animation: typing 1s infinite;
                   
@@ -526,7 +530,7 @@ const handleStop = () => {
               color: #a0a0a0;
               
               &:hover {
-                color: #409EFF;
+                color: #2B5876;
               }
             }
           }
@@ -544,9 +548,10 @@ const handleStop = () => {
               background-color: #252525;
               border-color: #2a2a2a;
               color: #e0e0e0;
+              border-radius: 8px;
               
               &:focus {
-                border-color: #409EFF;
+                border-color: #2B5876;
               }
             }
           }
@@ -571,7 +576,7 @@ const handleStop = () => {
           background: linear-gradient(135deg, #2B5876 0%, #4E4376 100%);
           
           &:hover {
-            border-color: #409EFF;
+            border-color: #2B5876;
           }
           
           .user-message {
@@ -591,10 +596,10 @@ const handleStop = () => {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    padding: 16px 24px;
+    padding: 20px 24px;
     background: linear-gradient(0deg, #1f1f1f 0%, #1a1a1a 100%);
     border-top: 1px solid #2a2a2a;
-    border-radius: 0 0 12px 12px;
+    border-radius: 0 0 16px 16px;
     height: 160px;
     position: sticky;
     bottom: 0;
@@ -615,14 +620,15 @@ const handleStop = () => {
           box-shadow: none;
           transition: all 0.3s ease;
           height: 80px;
+          border-radius: 8px;
           
           &:hover {
-            border-color: #409EFF;
+            border-color: #2B5876;
           }
           
           &:focus {
-            border-color: #409EFF;
-            box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.1);
+            border-color: #2B5876;
+            box-shadow: 0 0 0 3px rgba(43, 88, 118, 0.1);
           }
           
           &::placeholder {
@@ -638,10 +644,11 @@ const handleStop = () => {
         border: none;
         padding: 0 24px;
         transition: all 0.3s ease;
+        border-radius: 8px;
         
         &:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 4px 12px rgba(43, 88, 118, 0.2);
         }
         
         &:disabled {
