@@ -1,7 +1,7 @@
 <template>
   <div class="ai-chat-container">
     <div class="ai-chat-header">
-      <el-select v-model="selectedModel" placeholder="选择AI模型" class="model-selector">
+      <el-select v-model="selectedModel" placeholder="选择AI模型" class="model-selector" :loading="aiStore.isLoading">
         <el-option
           v-for="model in aiStore.availableModels"
           :key="model.id"
@@ -16,13 +16,13 @@
     </div>
 
     <div class="chat-messages" ref="chatContainer">
-      <div v-if="messages.length === 0" class="empty-chat">
+      <div v-if="orderedMessages.length === 0" class="empty-chat">
         <el-icon class="empty-icon"><ChatDotRound /></el-icon>
         <p>开始与AI助手对话</p>
       </div>
       
       <div 
-        v-for="message in messages" 
+        v-for="message in orderedMessages" 
         :key="message.id"
         class="message"
         :class="[message.role]"
@@ -34,8 +34,8 @@
           <AIAvatar 
             v-else 
             :size="36" 
-            :provider-id="getMessageProviderID(message)"
-            :model-id="selectedModel"
+            :provider-id="message.providerId || currentProvider"
+            :model-id="message.modelId || selectedModel"
           />
         </div>
         <div class="message-content">
@@ -48,16 +48,14 @@
                 <template v-else>
                   <div class="ai-message">
                     <div v-if="message.isStreaming" class="streaming-content">
-                      {{ message.content }}
+                      <span v-html="renderMarkdown(message.content)"></span>
                       <span class="typing-indicator">
                         <span class="dot"></span>
                         <span class="dot"></span>
                         <span class="dot"></span>
                       </span>
                     </div>
-                    <div v-else>
-                      {{ message.content }}
-                    </div>
+                    <div v-else v-html="renderMarkdown(message.content)"></div>
                   </div>
                 </template>
               </div>
@@ -137,7 +135,6 @@ import { useUserStore } from '@/stores/user'
 import { useAIStore } from '@/stores/ai'
 import { ElMessage } from 'element-plus'
 import { ChatDotRound, Position, Delete, Edit, Back, Right } from '@element-plus/icons-vue'
-import { marked } from 'marked'
 import AIAvatar from '@/components/ai/AIAvatar.vue'
 import MarkdownIt from 'markdown-it'
 import hljs from 'highlight.js'
@@ -156,72 +153,126 @@ const userAvatar = computed(() => userStore.user?.avatar || '')
 
 // 用户名首字母
 const userInitials = computed(() => {
-  const username = userStore.user?.username || '用户'
-  return username.charAt(0).toUpperCase()
+  if (!userStore.user?.name) return ''
+  return userStore.user.name.substring(0, 1).toUpperCase()
 })
 
-// 当前模型提供商
-const currentModelProvider = computed(() => {
-  const model = aiStore.availableModels.find(m => m.id === aiStore.currentModel)
-  return model ? model.provider : ''
+// 当前提供商
+const currentProvider = computed(() => aiStore.currentProvider || '')
+
+// 消息列表，按序列号排序
+const orderedMessages = computed(() => {
+  return [...aiStore.messages].sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
 })
 
-// 计算属性
-const messages = computed(() => aiStore.messages)
-const isLoading = computed(() => aiStore.isLoading)
-const currentModel = computed(() => aiStore.currentModel)
-const currentProvider = computed(() => aiStore.currentProvider)
+// 历史记录撤销和重做状态
 const canUndo = computed(() => aiStore.currentHistoryIndex > 0)
 const canRedo = computed(() => aiStore.currentHistoryIndex < aiStore.messageHistory.length - 1)
 
-// 修改 isEditing 方法
-const isEditing = (messageId) => {
-  return editingMessageId.value === messageId
-}
-
-// 初始化时设置默认模型
-onMounted(() => {
-  if (aiStore.defaultModel) {
-    selectedModel.value = aiStore.defaultModel
-  } else if (aiStore.availableModels.length > 0) {
-    selectedModel.value = aiStore.availableModels[0].id
+// 初始化
+onMounted(async () => {
+  // 如果AIStore已初始化，直接使用当前模型
+  if (aiStore.initialized) {
+    selectedModel.value = aiStore.currentModel
+    // console.log('AIChat: AIStore已初始化，使用当前模型:', selectedModel.value)
+  } 
+  // 如果AIStore有可用模型但未初始化
+  else if (aiStore.availableModels.length > 0) {
+    if (aiStore.defaultModel) {
+      selectedModel.value = aiStore.defaultModel
+      // console.log('AIChat: 使用默认模型:', selectedModel.value)
+    } else {
+      selectedModel.value = aiStore.availableModels[0].id
+      // console.log('AIChat: 使用第一个可用模型:', selectedModel.value)
+    }
   }
-  aiStore.setCurrentModel(selectedModel.value)
-  
-  // 添加滚动事件监听
-  if (chatContainer.value) {
-    chatContainer.value.addEventListener('scroll', () => {
-      // 可以在这里添加滚动相关的逻辑
-    })
+  // 如果AIStore未初始化，等待初始化
+  else {
+    // console.log('AIChat: AIStore未初始化，等待初始化完成')
+    // 用户已登录但AIStore未初始化，手动初始化
+    if (userStore.isAuthenticated && !aiStore.initialized && !aiStore.isInitializing) {
+      await aiStore.initialize()
+    }
   }
   
-  scrollToBottom()
+  // 异步初始化
+  nextTick(() => {
+    if (chatContainer.value && aiStore.messages.length > 0) {
+      scrollToBottom()
+    }
+  })
 })
 
-// 监听模型变化
-watch(selectedModel, (newModel) => {
-  aiStore.setCurrentModel(newModel)
+// 监听AI存储初始化状态变化
+watch(() => aiStore.initialized, (isInitialized) => {
+  if (isInitialized) {
+    // console.log('AIChat: AIStore初始化状态变化，重新设置模型')
+    selectedModel.value = aiStore.currentModel
+  }
 })
 
-// 监听消息变化，自动滚动到底部
-watch(messages, () => {
-  // 只在消息变化时检查是否需要滚动
+// 监听AI存储默认模型变化
+watch(() => aiStore.defaultModel, (newDefaultModel) => {
+  if (newDefaultModel && (!selectedModel.value || selectedModel.value !== newDefaultModel)) {
+    // console.log('AIChat: 默认模型变化:', newDefaultModel)
+    selectedModel.value = newDefaultModel
+  }
+})
+
+// 监听AI存储当前模型变化
+watch(() => aiStore.currentModel, (newCurrentModel) => {
+  if (newCurrentModel && selectedModel.value !== newCurrentModel) {
+    // console.log('AIChat: 当前模型变化:', newCurrentModel)
+    selectedModel.value = newCurrentModel
+  }
+})
+
+// 监听消息变化
+watch(() => aiStore.messages, () => {
+  // 在消息变化时检查是否需要滚动
   nextTick(() => {
     if (chatContainer.value) {
-      const scrollHeight = chatContainer.value.scrollHeight
-      const clientHeight = chatContainer.value.clientHeight
-      const maxScrollTop = scrollHeight - clientHeight
-      const isAtBottom = chatContainer.value.scrollTop + clientHeight >= scrollHeight - 50
-      
+      const isAtBottom = isUserAtBottom()
       if (isAtBottom) {
-        chatContainer.value.scrollTo({
-          top: maxScrollTop,
-          behavior: 'smooth'
-        })
+        scrollToBottom()
       }
     }
   })
 }, { deep: true })
+
+// 添加特定监听流式消息内容变化的监听器
+watch(() => {
+  // 查找流式消息
+  const streamingMsg = aiStore.messages.find(msg => msg.isStreaming)
+  return streamingMsg ? streamingMsg.content : null
+}, (newContent) => {
+  if (newContent && chatContainer.value) {
+    // 仅当用户在底部时自动滚动
+    const isAtBottom = isUserAtBottom()
+    if (isAtBottom) {
+      scrollToBottom()
+    }
+  }
+})
+
+// 监听选择的模型变化
+watch(selectedModel, (newModel) => {
+  if (newModel) {
+    aiStore.setCurrentModel(newModel)
+  }
+})
+
+// 检查用户是否在滚动容器底部
+function isUserAtBottom() {
+  if (!chatContainer.value) return true
+  
+  const scrollHeight = chatContainer.value.scrollHeight
+  const clientHeight = chatContainer.value.clientHeight
+  const scrollTop = chatContainer.value.scrollTop
+  
+  // 如果用户离底部在50px以内，视为在底部
+  return scrollTop + clientHeight >= scrollHeight - 50
+}
 
 // 创建 markdown-it 实例
 const md = new MarkdownIt({
@@ -239,22 +290,17 @@ const md = new MarkdownIt({
   }
 })
 
-// 格式化消息内容
-const formatMessage = (content) => {
+// 渲染Markdown内容
+const renderMarkdown = (content) => {
   if (!content) return ''
   return md.render(content)
 }
 
 // 格式化时间
 const formatTime = (timestamp) => {
+  if (!timestamp) return ''
   const date = new Date(timestamp)
   return date.toLocaleTimeString()
-}
-
-// 获取消息的提供商ID
-const getMessageProviderID = (message) => {
-  if (message.providerId) return message.providerId
-  return currentModelProvider.value
 }
 
 // 发送消息
@@ -266,6 +312,7 @@ const sendMessage = async () => {
   
   try {
     await aiStore.sendMessage(message)
+    scrollToBottom()
   } catch (error) {
     ElMessage.error('获取AI回复失败')
     userInput.value = message // 如果发送失败，恢复输入内容
@@ -277,140 +324,133 @@ const clearChat = () => {
   aiStore.clearMessages()
 }
 
+// 滚动到底部
 const scrollToBottom = () => {
   nextTick(() => {
     if (chatContainer.value) {
       const scrollHeight = chatContainer.value.scrollHeight
-      const clientHeight = chatContainer.value.clientHeight
-      const maxScrollTop = scrollHeight - clientHeight
-      
-      // 只有当用户不在查看历史消息时才自动滚动到底部
-      const isAtBottom = chatContainer.value.scrollTop + clientHeight >= scrollHeight - 50
-      if (isAtBottom) {
-        chatContainer.value.scrollTo({
-          top: maxScrollTop,
-          behavior: 'smooth'
-        })
-      }
+      chatContainer.value.scrollTo({
+        top: scrollHeight,
+        behavior: 'smooth'
+      })
     }
   })
 }
 
-// 修改 startEditing 方法
+// 开始编辑消息
 const startEditing = (message) => {
-  if (message.role === 'assistant' && message.isStreaming) {
-    ElMessage.warning('AI正在回复中，请等待回复完成')
-    return
-  }
+  if (aiStore.isLoading) return
   
   editingMessageId.value = message.id
   editingContent.value = message.content
-  aiStore.startEditing(message.id)
+  
+  // 聚焦到编辑框
+  nextTick(() => {
+    const textarea = document.querySelector('.message-edit .el-textarea__inner')
+    if (textarea) {
+      textarea.focus()
+    }
+  })
 }
 
-// 修改 cancelEditing 方法
+// 检查是否正在编辑
+const isEditing = (messageId) => {
+  return editingMessageId.value === messageId
+}
+
+// 取消编辑
 const cancelEditing = () => {
   editingMessageId.value = null
   editingContent.value = ''
-  aiStore.cancelEditing()
 }
 
-// 修改 saveEdit 方法
+// 保存编辑
 const saveEdit = async () => {
   if (!editingContent.value.trim()) {
     ElMessage.warning('消息内容不能为空')
     return
   }
   
-  try {
-    // 保存当前编辑的消息ID和内容
-    const messageId = editingMessageId.value
-    const content = editingContent.value
-    
-    // 重置编辑状态，让编辑框消失
-    editingMessageId.value = null
-    editingContent.value = ''
-    
-    // 然后保存编辑并重新发送消息
-    await aiStore.saveEdit(messageId, content)
-  } catch (error) {
-    console.error('保存编辑失败:', error)
-    ElMessage.error('保存编辑失败')
+  const messageId = editingMessageId.value
+  const content = editingContent.value
+  
+  // 清除编辑状态
+  editingMessageId.value = null
+  editingContent.value = ''
+  
+  // 保存编辑
+  await aiStore.saveEdit(messageId, content)
+  
+  // 滚动到底部
+  scrollToBottom()
+}
+
+// 撤销操作
+const undo = () => {
+  if (canUndo.value && !aiStore.isLoading) {
+    aiStore.undo()
   }
 }
 
-const undo = () => {
-  aiStore.undo()
-}
-
+// 重做操作
 const redo = () => {
-  aiStore.redo()
+  if (canRedo.value && !aiStore.isLoading) {
+    aiStore.redo()
+  }
 }
 
-// 处理停止生成
+// 停止生成
 const handleStop = () => {
   aiStore.cancelCurrentRequest()
 }
 </script>
 
-<style scoped lang="scss">
+<style lang="scss" scoped>
 .ai-chat-container {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: #171717;
-  border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  position: relative;
+  background-color: #f8fafc;
   
   .ai-chat-header {
-    flex: none;
+    padding: 16px 24px;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 20px 24px;
-    background: linear-gradient(180deg, #1f1f1f 0%, #1a1a1a 100%);
-    border-bottom: 1px solid #2a2a2a;
-    border-radius: 16px 16px 0 0;
-    height: 64px;
+    justify-content: space-between;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
     
     .model-selector {
       width: 240px;
       
       :deep(.el-input__wrapper) {
-        background-color: #252525;
-        border: 1px solid #2a2a2a;
-        box-shadow: none;
-        transition: all 0.3s ease;
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
         border-radius: 8px;
+        box-shadow: none;
         
         &:hover {
-          border-color: #2B5876;
+          border-color: #8b5cf6;
         }
         
         &.is-focus {
-          border-color: #2B5876;
-          box-shadow: 0 0 0 3px rgba(43, 88, 118, 0.1);
-        }
-        
-        .el-input__inner {
-          color: #e0e0e0;
+          border-color: #8b5cf6;
+          box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
         }
       }
     }
     
     .el-button {
-      background-color: #252525;
-      border: 1px solid #2a2a2a;
-      color: #a0a0a0;
-      transition: all 0.3s ease;
-      border-radius: 8px;
-      padding: 8px 16px;
+      border-color: #e2e8f0;
+      color: #475569;
       
       &:hover {
-        background-color: #2a2a2a;
-        border-color: #2B5876;
-        color: #2B5876;
+        border-color: #8b5cf6;
+        color: #8b5cf6;
       }
     }
   }
@@ -419,31 +459,6 @@ const handleStop = () => {
     flex: 1;
     overflow-y: auto;
     padding: 24px;
-    background-color: #171717;
-    border-radius: 16px;
-    margin: 16px;
-    margin-bottom: 0;
-    height: calc(100vh - 64px - 160px - 32px);
-    min-height: 0;
-    position: relative;
-    
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-    
-    &::-webkit-scrollbar-track {
-      background: #1f1f1f;
-      border-radius: 3px;
-    }
-    
-    &::-webkit-scrollbar-thumb {
-      background: #2a2a2a;
-      border-radius: 3px;
-      
-      &:hover {
-        background: #383838;
-      }
-    }
     
     .empty-chat {
       display: flex;
@@ -451,12 +466,12 @@ const handleStop = () => {
       align-items: center;
       justify-content: center;
       height: 100%;
-      color: #9ca3af;
+      color: #94a3b8;
       
       .empty-icon {
         font-size: 48px;
         margin-bottom: 16px;
-        color: #2B5876;
+        color: #8b5cf6;
       }
       
       p {
@@ -469,89 +484,164 @@ const handleStop = () => {
       gap: 16px;
       margin-bottom: 24px;
       
-      .message-avatar {
-        margin: 0 8px;
-      }
-      
-      .message-content {
-        flex: 1;
-        background-color: #1f1f1f;
-        padding: 20px;
-        border-radius: 16px;
-        border: 1px solid #2a2a2a;
-        color: #e0e0e0;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
+      &.user {
+        flex-direction: row-reverse;
         
-        &:hover {
-          border-color: #2B5876;
-          box-shadow: 0 4px 12px rgba(43, 88, 118, 0.1);
-        }
-        
-        .message-container {
-          position: relative;
-          padding-right: 40px;
+        .message-content {
+          align-items: flex-end;
+          
+          .message-container {
+            flex-direction: row-reverse;
+          }
           
           .message-text {
-            line-height: 1.6;
-            font-size: 14px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+            color: #ffffff;
+            border-radius: 16px 16px 0 16px;
             
-            &.streaming {
-              .typing-indicator {
-                display: inline-flex;
-                align-items: center;
-                margin-left: 4px;
-                padding: 0;
-                
-                .dot {
-                  width: 4px;
-                  height: 4px;
-                  margin: 0 1px;
-                  background-color: #2B5876;
-                  border-radius: 50%;
-                  animation: typing 1s infinite;
-                  
-                  &:nth-child(2) { animation-delay: 0.2s; }
-                  &:nth-child(3) { animation-delay: 0.4s; }
-                }
-              }
+            .user-message {
+              white-space: pre-wrap;
             }
           }
           
           .message-actions {
-            position: absolute;
-            top: 0;
-            right: 0;
-            opacity: 0;
-            transition: opacity 0.2s;
+            margin-right: 8px;
+          }
+          
+          .message-time {
+            text-align: right;
+          }
+        }
+      }
+      
+      &.assistant {
+        .message-text {
+          background-color: #ffffff;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px 16px 16px 0;
+          color: #1e293b;
+          
+          .ai-message {
+            :deep(pre) {
+              background: #f1f5f9;
+              border-radius: 8px;
+              padding: 16px;
+              margin: 8px 0;
+              
+              code {
+                font-family: 'Fira Code', monospace;
+                font-size: 14px;
+                line-height: 1.5;
+              }
+            }
             
-            .el-button {
-              padding: 4px 8px;
-              color: #a0a0a0;
+            :deep(p) {
+              margin: 8px 0;
+              line-height: 1.6;
+            }
+            
+            :deep(ul), :deep(ol) {
+              margin: 8px 0;
+              padding-left: 24px;
+            }
+            
+            :deep(a) {
+              color: #8b5cf6;
+              text-decoration: none;
               
               &:hover {
-                color: #2B5876;
+                text-decoration: underline;
               }
             }
           }
           
-          &:hover .message-actions {
-            opacity: 1;
+          .streaming-content {
+            .typing-indicator {
+              display: inline-flex;
+              align-items: center;
+              gap: 4px;
+              margin-left: 8px;
+              
+              .dot {
+                width: 4px;
+                height: 4px;
+                background-color: #8b5cf6;
+                border-radius: 50%;
+                animation: typing 1s infinite;
+                
+                &:nth-child(2) { animation-delay: 0.2s; }
+                &:nth-child(3) { animation-delay: 0.4s; }
+              }
+            }
           }
+        }
+      }
+      
+      .message-avatar {
+        flex-shrink: 0;
+        
+        .el-avatar {
+          background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+          color: #ffffff;
+          font-weight: 600;
+        }
+      }
+      
+      .message-content {
+        display: flex;
+        flex-direction: column;
+        max-width: 80%;
+        
+        .message-container {
+          display: flex;
+          align-items: flex-start;
+          gap: 8px;
+        }
+        
+        .message-text {
+          padding: 12px 16px;
+          font-size: 15px;
+          line-height: 1.6;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .message-actions {
+          opacity: 0;
+          transition: opacity 0.2s;
+          
+          .el-button {
+            padding: 6px;
+            border-color: #e2e8f0;
+            
+            &:hover {
+              border-color: #8b5cf6;
+              color: #8b5cf6;
+            }
+          }
+        }
+        
+        &:hover .message-actions {
+          opacity: 1;
+        }
+        
+        .message-time {
+          font-size: 12px;
+          color: #94a3b8;
+          margin-top: 4px;
         }
         
         .message-edit {
           width: 100%;
           
-          .el-textarea {
+          .el-input {
+            margin-bottom: 8px;
+            
             :deep(.el-textarea__inner) {
-              background-color: #252525;
-              border-color: #2a2a2a;
-              color: #e0e0e0;
+              border-color: #e2e8f0;
               border-radius: 8px;
               
-              &:focus {
-                border-color: #2B5876;
+              &:hover, &:focus {
+                border-color: #8b5cf6;
               }
             }
           }
@@ -560,79 +650,45 @@ const handleStop = () => {
             display: flex;
             justify-content: flex-end;
             gap: 8px;
-            margin-top: 8px;
-          }
-        }
-        
-        .message-time {
-          margin-top: 8px;
-          font-size: 12px;
-          color: #666;
-        }
-      }
-      
-      &.user {
-        .message-content {
-          background: linear-gradient(135deg, #2B5876 0%, #4E4376 100%);
-          
-          &:hover {
-            border-color: #2B5876;
-          }
-          
-          .user-message {
-            white-space: pre-wrap;
-            word-break: break-word;
-            font-size: 14px;
-            line-height: 1.6;
-            color: #e0e0e0;
+            
+            .el-button {
+              &--primary {
+                background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+                border: none;
+                
+                &:hover {
+                  transform: translateY(-1px);
+                  box-shadow: 0 4px 8px rgba(139, 92, 246, 0.2);
+                }
+              }
+            }
           }
         }
       }
     }
   }
-
+  
   .chat-input {
-    flex: none;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    padding: 20px 24px;
-    background: linear-gradient(0deg, #1f1f1f 0%, #1a1a1a 100%);
-    border-top: 1px solid #2a2a2a;
-    border-radius: 0 0 16px 16px;
-    height: 160px;
-    position: sticky;
-    bottom: 0;
-    z-index: 10;
+    padding: 24px;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
     
     .input-wrapper {
       display: flex;
-      gap: 12px;
-      margin-bottom: 8px;
+      gap: 16px;
+      margin-bottom: 12px;
       
-      .el-textarea {
-        flex: 1;
-        
+      .el-input {
         :deep(.el-textarea__inner) {
-          background-color: #252525;
-          border: 1px solid #2a2a2a;
-          color: #e0e0e0;
-          box-shadow: none;
-          transition: all 0.3s ease;
-          height: 80px;
-          border-radius: 8px;
+          border-color: #e2e8f0;
+          border-radius: 12px;
+          padding: 12px 16px;
+          min-height: 80px;
+          resize: none;
+          font-size: 15px;
           
-          &:hover {
-            border-color: #2B5876;
-          }
-          
-          &:focus {
-            border-color: #2B5876;
-            box-shadow: 0 0 0 3px rgba(43, 88, 118, 0.1);
-          }
-          
-          &::placeholder {
-            color: #666;
+          &:hover, &:focus {
+            border-color: #8b5cf6;
           }
         }
       }
@@ -640,24 +696,25 @@ const handleStop = () => {
       .send-button {
         align-self: flex-end;
         height: 40px;
-        background: linear-gradient(135deg, #2B5876 0%, #4E4376 100%);
-        border: none;
         padding: 0 24px;
-        transition: all 0.3s ease;
+        background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+        border: none;
         border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
         
         &:hover:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(43, 88, 118, 0.2);
+          box-shadow: 0 4px 8px rgba(139, 92, 246, 0.2);
         }
         
         &:disabled {
-          opacity: 0.5;
-          background: linear-gradient(135deg, #2B5876 0%, #4E4376 100%);
+          background: #e2e8f0;
+          opacity: 0.7;
         }
         
         .el-icon {
-          margin-right: 8px;
+          margin-right: 4px;
         }
       }
     }
@@ -666,326 +723,24 @@ const handleStop = () => {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 8px 0;
-    }
-  }
-}
-
-.typing-indicator {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 4px;
-  padding: 0;
-  
-  .dot {
-    width: 4px;
-    height: 4px;
-    margin: 0 1px;
-    background-color: #e0e0e0;
-    border-radius: 50%;
-    animation: typing 1s infinite;
-    
-    &:nth-child(2) { animation-delay: 0.2s; }
-    &:nth-child(3) { animation-delay: 0.4s; }
-  }
-}
-
-@keyframes typing {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-
-.message-text {
-  &.streaming {
-    .typing-indicator {
-      display: inline-flex;
-      align-items: center;
-      margin-left: 4px;
-      padding: 0;
       
-      .dot {
-        width: 4px;
-        height: 4px;
-        margin: 0 1px;
-        background-color: #e0e0e0;
-        border-radius: 50%;
-        animation: typing 1s infinite;
-        
-        &:nth-child(2) { animation-delay: 0.2s; }
-        &:nth-child(3) { animation-delay: 0.4s; }
-      }
-    }
-  }
-}
-
-@keyframes typing {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
-}
-
-.message {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
-  
-  .message-avatar {
-    margin: 0 8px;
-  }
-  
-  .message-content {
-    flex: 1;
-    background-color: #1f1f1f;
-    padding: 16px;
-    border-radius: 12px;
-    border: 1px solid #2a2a2a;
-    color: #e0e0e0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
-    
-    &:hover {
-      border-color: #2B5876;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-    
-    .message-container {
-      position: relative;
-      padding-right: 40px;
-      
-      .message-text {
-        line-height: 1.6;
-        font-size: 14px;
-        
-        &.streaming {
-          .typing-indicator {
-            display: inline-flex;
-            align-items: center;
-            margin-left: 4px;
-            padding: 0;
-            
-            .dot {
-              width: 4px;
-              height: 4px;
-              margin: 0 1px;
-              background-color: #e0e0e0;
-              border-radius: 50%;
-              animation: typing 1s infinite;
-              
-              &:nth-child(2) { animation-delay: 0.2s; }
-              &:nth-child(3) { animation-delay: 0.4s; }
-            }
-          }
-        }
-      }
-      
-      .message-actions {
-        position: absolute;
-        top: 0;
-        right: 0;
-        opacity: 0;
-        transition: opacity 0.2s;
-        
+      .el-button-group {
         .el-button {
-          padding: 4px 8px;
-          color: #a0a0a0;
+          border-color: #e2e8f0;
+          color: #475569;
           
-          &:hover {
-            color: #409EFF;
+          &:hover:not(:disabled) {
+            border-color: #8b5cf6;
+            color: #8b5cf6;
+          }
+          
+          &:disabled {
+            color: #cbd5e1;
+            border-color: #e2e8f0;
+            background-color: #f8fafc;
           }
         }
       }
-      
-      &:hover .message-actions {
-        opacity: 1;
-      }
-    }
-    
-    .message-edit {
-      width: 100%;
-      
-      .el-textarea {
-        :deep(.el-textarea__inner) {
-          background-color: #252525;
-          border-color: #2a2a2a;
-          color: #e0e0e0;
-          
-          &:focus {
-            border-color: #409EFF;
-          }
-        }
-      }
-      
-      .edit-actions {
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        margin-top: 8px;
-      }
-    }
-    
-    .message-time {
-      margin-top: 8px;
-      font-size: 12px;
-      color: #666;
-    }
-  }
-  
-  &.user {
-    .message-content {
-      background: linear-gradient(135deg, #2B5876 0%, #4E4376 100%);
-      
-      &:hover {
-        border-color: #409EFF;
-      }
-      
-      .user-message {
-        white-space: pre-wrap;
-        word-break: break-word;
-        font-size: 14px;
-        line-height: 1.6;
-        color: #e0e0e0;
-      }
-    }
-  }
-}
-
-.markdown-body {
-  color: #e0e0e0;
-  font-size: 14px;
-  line-height: 1.6;
-  
-  :deep(p) {
-    margin: 8px 0;
-  }
-  
-  :deep(pre) {
-    background-color: #252525;
-    border-radius: 4px;
-    padding: 12px;
-    margin: 8px 0;
-    overflow-x: auto;
-    
-    code {
-      color: #e0e0e0;
-      font-family: 'Fira Code', monospace;
-    }
-  }
-  
-  :deep(code) {
-    background-color: #252525;
-    padding: 2px 4px;
-    border-radius: 4px;
-    font-family: 'Fira Code', monospace;
-  }
-  
-  :deep(a) {
-    color: #409EFF;
-    text-decoration: none;
-    
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-  
-  :deep(ul), :deep(ol) {
-    padding-left: 20px;
-    margin: 8px 0;
-  }
-  
-  :deep(blockquote) {
-    margin: 8px 0;
-    padding: 8px 16px;
-    border-left: 4px solid #409EFF;
-    background-color: #252525;
-    
-    p {
-      margin: 0;
-    }
-  }
-  
-  :deep(table) {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 8px 0;
-    
-    th, td {
-      border: 1px solid #383838;
-      padding: 8px;
-      text-align: left;
-    }
-    
-    th {
-      background-color: #252525;
-    }
-    
-    tr:nth-child(even) {
-      background-color: #1f1f1f;
-    }
-  }
-}
-
-:deep(.hljs) {
-  background: #1a1a1a !important;
-  border-radius: 4px;
-  padding: 16px !important;
-  
-  .hljs-keyword,
-  .hljs-selector-tag,
-  .hljs-title,
-  .hljs-section,
-  .hljs-doctag,
-  .hljs-name,
-  .hljs-strong {
-    color: #c678dd;
-  }
-
-  .hljs-string {
-    color: #98c379;
-  }
-
-  .hljs-comment {
-    color: #5c6370;
-  }
-
-  .hljs-number,
-  .hljs-literal {
-    color: #d19a66;
-  }
-
-  .hljs-attribute,
-  .hljs-attr {
-    color: #e06c75;
-  }
-
-  .hljs-variable,
-  .hljs-template-variable,
-  .hljs-tag,
-  .hljs-name,
-  .hljs-selector-id,
-  .hljs-selector-class {
-    color: #61afef;
-  }
-}
-
-.streaming-content {
-  display: inline-block;
-  white-space: pre-wrap;
-  
-  .typing-indicator {
-    display: inline-flex;
-    align-items: center;
-    margin-left: 4px;
-    padding: 0;
-    
-    .dot {
-      width: 4px;
-      height: 4px;
-      margin: 0 1px;
-      background-color: #e0e0e0;
-      border-radius: 50%;
-      animation: typing 1s infinite;
-      
-      &:nth-child(2) { animation-delay: 0.2s; }
-      &:nth-child(3) { animation-delay: 0.4s; }
     }
   }
 }

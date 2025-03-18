@@ -46,6 +46,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 	tagService := service.NewTagService()
 	verificationService := service.NewVerificationService()
 	notificationService := service.NewNotificationService()
+	aiService := service.NewAIService()
 
 	// 创建存储实例
 	storageInstance, err := storage.DefaultFactory.CreateStorage(&cfg.Storage)
@@ -78,6 +79,7 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 		categoryHandler := handler.NewCategoryHandler(categoryService)
 		tagHandler := handler.NewTagHandler(tagService)
 		authHandler := handler.NewAuthHandler(authService, postService)
+		aiHandler := handler.NewAIHandler(aiService)
 
 		// 公开接口组
 		public := api.Group("/public")
@@ -102,6 +104,9 @@ func SetupRouter(cfg *config.Config) *gin.Engine {
 			public.GET("/users/:id/home", authHandler.GetUserHome)
 			public.GET("/users/:id/comments", commentHandler.ListUserComments)
 		}
+
+		// AI相关公开接口
+		aiHandler.RegisterRoutes(api)
 
 		// 需要认证的路由组
 		authenticated := api.Group("")

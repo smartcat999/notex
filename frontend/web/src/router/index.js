@@ -109,8 +109,12 @@ const router = createRouter({
           component: () => import('@/components/ai/AISettings.vue')
         },
         {
-          path: 'word-polish',
+          path: 'ai-document',
           component: () => import('@/components/ai/WordPolish.vue')
+        },
+        {
+          path: 'ai-writing',
+          component: () => import('@/components/ai/AIWriting.vue')
         }
       ]
     },

@@ -3,6 +3,7 @@
     <div class="settings-header">
       <h2>AI 模型配置</h2>
       <p>配置您的AI模型API密钥和参数</p>
+      <el-button v-if="isDev" @click="debugSettings" size="small" type="info">调试设置</el-button>
     </div>
 
     <el-tabs v-model="activeTab" tab-position="left" class="settings-tabs">
@@ -113,168 +114,255 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useAIStore } from '@/stores/ai'
+import { useUserStore } from '@/stores/user'
+import axios from 'axios'
 
 const aiStore = useAIStore()
+const userStore = useUserStore()
 const activeTab = ref('openai')
 const defaultModel = ref('')
+const isLoading = ref(false)
+const settingsLoaded = ref(false)
+const isDev = import.meta.env.DEV
+const isLoadingProviders = ref(false)
+const isLoadingUserSettings = ref(false)
 
-// AI提供商列表
-const aiProviders = [
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    hasEndpoint: false,
-    models: [
-      {
-        id: 'gpt-3.5-turbo',
-        name: 'GPT-3.5 Turbo',
-        description: '强大的语言模型，适合大多数任务，响应速度快。',
-        isPaid: true
-      },
-      {
-        id: 'gpt-4',
-        name: 'GPT-4',
-        description: '最先进的语言模型，具有更强的推理能力和更广泛的知识。',
-        isPaid: true
-      }
-    ]
-  },
-  {
-    id: 'anthropic',
-    name: 'Anthropic',
-    hasEndpoint: false,
-    models: [
-      {
-        id: 'claude-3-opus',
-        name: 'Claude 3 Opus',
-        description: 'Anthropic的顶级模型，具有强大的推理和创作能力。',
-        isPaid: true
-      },
-      {
-        id: 'claude-3-sonnet',
-        name: 'Claude 3 Sonnet',
-        description: '平衡性能和速度的模型，适合大多数任务。',
-        isPaid: true
-      }
-    ]
-  },
-  {
-    id: 'google',
-    name: 'Google AI',
-    hasEndpoint: false,
-    models: [
-      {
-        id: 'gemini-pro',
-        name: 'Gemini Pro',
-        description: 'Google的多模态AI模型，具有强大的理解和生成能力。',
-        isPaid: true
-      }
-    ]
-  },
-  {
-    id: 'deepseek',
-    name: 'DeepSeek',
-    hasEndpoint: false,
-    models: [
-      {
-        id: 'deepseek-chat',
-        name: 'DeepSeek Chat',
-        description: 'DeepSeek的通用对话模型，擅长自然语言理解和生成。',
-        isPaid: true
-      },
-      {
-        id: 'deepseek-coder',
-        name: 'DeepSeek Coder',
-        description: 'DeepSeek的代码生成模型，专注于编程和开发任务。',
-        isPaid: true
-      }
-    ]
-  },
-  {
-    id: 'custom',
-    name: '自定义模型',
-    hasEndpoint: true,
-    models: [
-      {
-        id: 'custom-model',
-        name: '自定义模型',
-        description: '配置您自己的AI模型API端点。',
-        isPaid: false
-      }
-    ]
-  }
-]
+// API基础URL
+const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '/api'
 
-// 初始化每个提供商的设置
-const initProviderSettings = () => {
-  const settings = {}
-  
-  aiProviders.forEach(provider => {
-    const modelParams = {}
-    const enabledModels = {}
-    
-    provider.models.forEach(model => {
-      modelParams[model.id] = {
-        temperature: 0.7,
-        maxTokens: 2000
-      }
-      enabledModels[model.id] = false
-    })
-    
-    settings[provider.id] = {
-      apiKey: '',
-      endpoint: provider.hasEndpoint ? '' : undefined,
-      enabledModels,
-      modelParams
-    }
-  })
-  
-  return settings
+// 获取认证头
+const getAuthHeaders = () => {
+  const token = userStore.token
+  return token ? { Authorization: `Bearer ${token}` } : {}
 }
 
-const providerSettings = reactive(initProviderSettings())
+// AI提供商列表
+const aiProviders = ref([])
 
-// 加载保存的设置
-onMounted(() => {
-  // 从localStorage或后端API加载设置
-  const savedSettings = localStorage.getItem('aiProviderSettings')
-  if (savedSettings) {
-    try {
-      const parsed = JSON.parse(savedSettings)
-      Object.keys(parsed).forEach(providerId => {
-        if (providerSettings[providerId]) {
-          Object.assign(providerSettings[providerId], parsed[providerId])
-        }
-      })
-    } catch (error) {
-      console.error('Failed to load AI settings:', error)
-    }
+// 初始化每个提供商的设置
+const providerSettings = reactive({})
+
+// 监听用户登录状态变化
+watch(() => userStore.isAuthenticated, async (isAuthenticated) => {
+  if (isAuthenticated && !settingsLoaded.value) {
+    await loadProvidersAndModels()
+    await loadUserSettings()
+    settingsLoaded.value = true
   }
-
-  // 初始化时读取默认模型
-  defaultModel.value = aiStore.defaultModel
 })
 
-// 保存提供商设置
-const saveProviderSettings = (providerId) => {
-  // 保存到localStorage或发送到后端API
-  const allSettings = JSON.parse(localStorage.getItem('aiProviderSettings') || '{}')
-  allSettings[providerId] = providerSettings[providerId]
-  localStorage.setItem('aiProviderSettings', JSON.stringify(allSettings))
+// 监听 AI 存储的初始化状态
+watch(() => aiStore.initialized, async (initialized) => {
+  if (initialized) {
+    defaultModel.value = aiStore.defaultModel
+  }
+})
+
+// 加载AI提供商和模型
+const loadProvidersAndModels = async () => {
+  if (isLoadingProviders.value) {
+    return
+  }
   
-  ElMessage.success(`${getProviderName(providerId)} 设置已保存`)
+  if (aiStore.modelsLoaded) {
+    const providers = {}
+    aiStore.availableModels.forEach(model => {
+      if (!providers[model.provider]) {
+        providers[model.provider] = {
+          id: model.provider,
+          name: model.provider,
+          description: '',
+          hasEndpoint: model.provider !== 'openai',
+          models: []
+        }
+      }
+      
+      providers[model.provider].models.push({
+        id: model.id,
+        name: model.name,
+        description: model.description,
+        isPaid: model.isPaid
+      })
+    })
+    
+    aiProviders.value = Object.values(providers)
+    
+    aiProviders.value.forEach(provider => {
+      initProviderSetting(provider)
+    })
+    
+    if (aiProviders.value.length > 0) {
+      activeTab.value = aiProviders.value[0].id
+    }
+    
+    return
+  }
+  
+  try {
+    isLoadingProviders.value = true
+    isLoading.value = true
+    const response = await axios.get(`${apiBaseUrl}/ai/available-models`)
+    
+    if (response.data && response.data.providers) {
+      aiProviders.value = response.data.providers.map(provider => ({
+        id: provider.providerId,
+        name: provider.name,
+        description: provider.description,
+        hasEndpoint: provider.hasEndpoint,
+        models: provider.models.map(model => ({
+          id: model.modelId,
+          name: model.name,
+          description: model.description,
+          isPaid: model.isPaid
+        }))
+      }))
+      
+      aiProviders.value.forEach(provider => {
+        initProviderSetting(provider)
+      })
+      
+      if (aiProviders.value.length > 0) {
+        activeTab.value = aiProviders.value[0].id
+      }
+    }
+  } catch (error) {
+    console.error('加载AI提供商和模型失败:', error)
+    ElMessage.error('加载AI提供商和模型失败')
+  } finally {
+    isLoading.value = false
+    isLoadingProviders.value = false
+  }
+}
+
+// 初始化提供商设置
+const initProviderSetting = (provider) => {
+  const modelParams = {}
+  const enabledModels = {}
+  
+  provider.models.forEach(model => {
+    modelParams[model.id] = {
+      temperature: 0.7,
+      maxTokens: 2000
+    }
+    enabledModels[model.id] = false
+  })
+  
+  providerSettings[provider.id] = {
+    apiKey: '',
+    endpoint: provider.hasEndpoint ? '' : undefined,
+    enabledModels,
+    modelParams
+  }
+}
+
+// 加载用户设置
+const loadUserSettings = async () => {
+  if (!userStore.isAuthenticated) {
+    return
+  }
+  
+  if (isLoadingUserSettings.value) {
+    return
+  }
+
+  try {
+    isLoadingUserSettings.value = true
+    isLoading.value = true
+    
+    const response = await axios.get(`${apiBaseUrl}/ai/settings`, {
+      headers: getAuthHeaders()
+    })
+    
+    if (response.data && response.data.settings) {
+      response.data.settings.forEach(setting => {
+        if (providerSettings[setting.providerId]) {
+          providerSettings[setting.providerId].apiKey = setting.apiKey || ''
+          providerSettings[setting.providerId].endpoint = setting.endpoint || ''
+          
+          if (setting.enabledModels) {
+            Object.keys(setting.enabledModels).forEach(modelId => {
+              if (providerSettings[setting.providerId].enabledModels.hasOwnProperty(modelId)) {
+                providerSettings[setting.providerId].enabledModels[modelId] = setting.enabledModels[modelId]
+              }
+            })
+          }
+          
+          if (setting.modelParams) {
+            Object.keys(setting.modelParams).forEach(modelId => {
+              if (providerSettings[setting.providerId].modelParams.hasOwnProperty(modelId)) {
+                providerSettings[setting.providerId].modelParams[modelId] = {
+                  ...providerSettings[setting.providerId].modelParams[modelId],
+                  ...setting.modelParams[modelId]
+                }
+              }
+            })
+          }
+        }
+      })
+    }
+    
+    const defaultResponse = await axios.get(`${apiBaseUrl}/ai/default-setting`, {
+      headers: getAuthHeaders()
+    })
+    if (defaultResponse.data && defaultResponse.data.defaultModel) {
+      defaultModel.value = defaultResponse.data.defaultModel
+    }
+  } catch (error) {
+    console.error('加载用户设置失败:', error)
+  } finally {
+    isLoading.value = false
+    isLoadingUserSettings.value = false
+  }
+}
+
+// 保存提供商设置
+const saveProviderSettings = async (providerId) => {
+  try {
+    isLoading.value = true
+    
+    const settingData = {
+      providerId: providerId,
+      apiKey: providerSettings[providerId].apiKey,
+      endpoint: providerSettings[providerId].endpoint,
+      enabledModels: providerSettings[providerId].enabledModels,
+      modelParams: providerSettings[providerId].modelParams
+    }
+    
+    await axios.post(`${apiBaseUrl}/ai/settings`, settingData, {
+      headers: getAuthHeaders()
+    })
+    
+    ElMessage.success(`${getProviderName(providerId)} 设置已保存`)
+    
+    const defaultModelObj = aiStore.availableModels.find(m => m.id === defaultModel.value)
+    if (defaultModelObj && defaultModelObj.provider === providerId) {
+      await aiStore.initialize()
+    }
+  } catch (error) {
+    console.error('保存设置失败:', error)
+    ElMessage.error(`保存设置失败: ${error.response?.data?.error || error.message}`)
+  } finally {
+    isLoading.value = false
+  }
 }
 
 // 测试连接
 const testConnection = async (providerId) => {
   try {
+    isLoading.value = true
     ElMessage.info(`正在测试 ${getProviderName(providerId)} 连接...`)
     
-    // 使用AI store测试连接
-    const success = await aiStore.testProviderConnection(providerId)
+    const defaultModelForProvider = getDefaultModelForProvider(providerId)
+    
+    const success = await aiStore.testProviderConnection(
+      providerId,
+      providerSettings[providerId].apiKey,
+      providerSettings[providerId].endpoint,
+      defaultModelForProvider
+    )
     
     if (success) {
       ElMessage.success(`${getProviderName(providerId)} 连接测试成功`)
@@ -283,59 +371,137 @@ const testConnection = async (providerId) => {
     }
   } catch (error) {
     ElMessage.error(`${getProviderName(providerId)} 连接测试失败: ${error.message}`)
+  } finally {
+    isLoading.value = false
   }
 }
 
 // 获取提供商名称
 const getProviderName = (providerId) => {
-  const provider = aiProviders.find(p => p.id === providerId)
+  const provider = aiProviders.value.find(p => p.id === providerId)
   return provider ? provider.name : providerId
 }
 
-const handleDefaultModelChange = (modelId) => {
-  aiStore.saveDefaultModel(modelId)
-  ElMessage.success('默认模型设置已保存')
+// 获取提供商的默认模型
+const getDefaultModelForProvider = (providerId) => {
+  const provider = aiProviders.value.find(p => p.id === providerId)
+  if (!provider || !provider.models || provider.models.length === 0) {
+    return null
+  }
+  
+  const enabledModels = Object.entries(providerSettings[providerId].enabledModels)
+    .filter(([_, enabled]) => enabled)
+    .map(([modelId]) => modelId)
+  
+  if (enabledModels.length > 0) {
+    return enabledModels[0]
+  }
+  
+  return provider.models[0].id
 }
+
+const handleDefaultModelChange = async (modelId) => {
+  try {
+    isLoading.value = true
+    
+    const defaultData = { defaultModel: modelId }
+    
+    await axios.post(`${apiBaseUrl}/ai/default-setting`, defaultData, {
+      headers: getAuthHeaders()
+    })
+    
+    await aiStore.saveDefaultModel(modelId)
+    
+    ElMessage.success('默认模型设置已保存')
+    
+    await aiStore.initialize()
+  } catch (error) {
+    console.error('保存默认模型失败:', error)
+    ElMessage.error(`保存默认模型失败: ${error.response?.data?.error || error.message}`)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// 调试设置
+const debugSettings = () => {
+  if (isDev) {
+    console.error('当前设置状态:', {
+      providerSettings,
+      defaultModel: defaultModel.value,
+      aiStore: {
+        initialized: aiStore.initialized,
+        defaultModel: aiStore.defaultModel,
+        currentModel: aiStore.currentModel,
+        currentProvider: aiStore.currentProvider,
+        availableModels: aiStore.availableModels
+      },
+      userAuth: userStore.isAuthenticated,
+      settingsLoaded: settingsLoaded.value
+    })
+  }
+}
+
+// 初始化
+onMounted(async () => {
+  if (settingsLoaded.value) {
+    return
+  }
+  
+  await loadProvidersAndModels()
+  
+  if (userStore.isAuthenticated) {
+    await loadUserSettings()
+    settingsLoaded.value = true
+  }
+  
+  if (aiStore.initialized) {
+    defaultModel.value = aiStore.defaultModel
+  }
+})
 </script>
 
 <style scoped lang="scss">
 .ai-settings-container {
-  padding: 24px;
+  padding: 32px;
   max-width: 1200px;
   margin: 0 auto;
-  background-color: #ffffff;
+  background-color: #f5f7fa;
+  min-height: 100vh;
 }
 
 .settings-header {
-  margin-bottom: 32px;
+  margin-bottom: 40px;
   text-align: center;
   
   h2 {
-    font-size: 24px;
+    font-size: 28px;
     font-weight: 600;
-    margin-bottom: 12px;
-    color: #1a1a1a;
-    background: linear-gradient(135deg, #2B5876 0%, #4E4376 100%);
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    letter-spacing: 0.5px;
   }
   
   p {
-    color: #666;
+    color: #64748b;
     font-size: 16px;
+    line-height: 1.6;
   }
 }
 
 .settings-tabs {
-  border: 1px solid #e5e7eb;
+  background: white;
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
   
   :deep(.el-tabs__header) {
     margin-right: 0;
     background-color: #f8fafc;
-    border-right: 1px solid #e5e7eb;
+    border-right: 1px solid #e2e8f0;
     width: 240px;
   }
   
@@ -345,17 +511,19 @@ const handleDefaultModelChange = (modelId) => {
     text-align: left;
     padding: 0 24px;
     font-size: 15px;
-    color: #4b5563;
+    color: #64748b;
     transition: all 0.3s ease;
     
     &:hover {
-      color: #2B5876;
+      color: #8b5cf6;
+      background-color: rgba(139, 92, 246, 0.04);
     }
     
     &.is-active {
-      background-color: rgba(43, 88, 118, 0.08);
-      color: #2B5876;
+      background-color: rgba(139, 92, 246, 0.08);
+      color: #8b5cf6;
       font-weight: 500;
+      border-right: 3px solid #8b5cf6;
     }
   }
   
@@ -367,10 +535,10 @@ const handleDefaultModelChange = (modelId) => {
 
 .provider-settings {
   h3 {
-    font-size: 20px;
+    font-size: 22px;
     font-weight: 600;
-    margin-bottom: 24px;
-    color: #1a1a1a;
+    margin-bottom: 32px;
+    color: #1e293b;
     position: relative;
     padding-bottom: 12px;
     
@@ -379,36 +547,38 @@ const handleDefaultModelChange = (modelId) => {
       position: absolute;
       bottom: 0;
       left: 0;
-      width: 40px;
+      width: 48px;
       height: 3px;
-      background: linear-gradient(90deg, #2B5876 0%, #4E4376 100%);
+      background: linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%);
       border-radius: 2px;
     }
   }
 }
 
 .models-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 24px;
+  margin-top: 24px;
   
   .model-item {
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e2e8f0;
     border-radius: 12px;
-    padding: 20px;
+    padding: 24px;
     transition: all 0.3s ease;
     background-color: #ffffff;
     
     &:hover {
-      border-color: #2B5876;
-      box-shadow: 0 4px 12px rgba(43, 88, 118, 0.1);
+      border-color: #8b5cf6;
+      box-shadow: 0 8px 16px rgba(139, 92, 246, 0.08);
+      transform: translateY(-2px);
     }
     
     .model-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 12px;
+      margin-bottom: 16px;
       
       .el-checkbox {
         font-weight: 500;
@@ -416,41 +586,83 @@ const handleDefaultModelChange = (modelId) => {
       }
     }
     
+    :deep(.el-tag) {
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    :deep(.el-tag--success) {
+      background-color: rgba(34, 197, 94, 0.1);
+      border-color: rgba(34, 197, 94, 0.2);
+      color: #16a34a;
+    }
+    
+    :deep(.el-tag--danger) {
+      background-color: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.2);
+      color: #dc2626;
+    }
+    
     .model-description {
-      color: #6b7280;
+      color: #64748b;
       font-size: 14px;
       line-height: 1.6;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
     }
     
     .model-params {
       background-color: #f8fafc;
       border-radius: 10px;
-      padding: 20px;
-      margin-top: 20px;
-      border: 1px solid #e5e7eb;
+      padding: 24px;
+      margin-top: 24px;
+      border: 1px solid #e2e8f0;
+      
+      :deep(.el-form-item__label) {
+        color: #475569;
+        font-weight: 500;
+        font-size: 14px;
+      }
     }
   }
 }
 
 .provider-actions {
-  margin-top: 32px;
+  margin-top: 40px;
   display: flex;
   gap: 16px;
   
   .el-button {
-    padding: 12px 24px;
+    padding: 12px 28px;
     font-size: 15px;
     border-radius: 8px;
     transition: all 0.3s ease;
+    font-weight: 500;
     
     &--primary {
-      background: linear-gradient(135deg, #2B5876 0%, #4E4376 100%);
+      background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
       border: none;
       
       &:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(43, 88, 118, 0.2);
+        box-shadow: 0 8px 16px rgba(139, 92, 246, 0.16);
+      }
+    }
+    
+    &:not(.el-button--primary) {
+      border-color: #e2e8f0;
+      color: #475569;
+      
+      &:hover {
+        border-color: #8b5cf6;
+        color: #8b5cf6;
+      }
+      
+      &[disabled] {
+        border-color: #e2e8f0;
+        color: #94a3b8;
+        background-color: #f8fafc;
       }
     }
   }
@@ -460,11 +672,13 @@ const handleDefaultModelChange = (modelId) => {
   margin-top: 32px;
   border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
   
   :deep(.el-card__header) {
-    background: linear-gradient(135deg, #2B5876 0%, #4E4376 100%);
+    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
     padding: 20px 24px;
+    border-bottom: none;
     
     .card-header {
       h3 {
@@ -479,18 +693,19 @@ const handleDefaultModelChange = (modelId) => {
   .settings-form {
     padding: 24px;
     
-    .el-form-item {
+    :deep(.el-form-item) {
       margin-bottom: 28px;
       
-      :deep(.el-form-item__label) {
-        color: #1a1a1a;
+      .el-form-item__label {
+        color: #1e293b;
         font-weight: 500;
+        font-size: 15px;
       }
       
       .form-tip {
         margin-top: 8px;
         font-size: 13px;
-        color: #6b7280;
+        color: #64748b;
       }
     }
     
@@ -500,24 +715,26 @@ const handleDefaultModelChange = (modelId) => {
       
       .el-input__wrapper {
         background-color: #ffffff;
-        border: 1px solid #e5e7eb;
+        border: 1px solid #e2e8f0;
         border-radius: 8px;
         padding: 0 12px;
         transition: all 0.3s ease;
+        box-shadow: none;
         
         &:hover {
-          border-color: #2B5876;
+          border-color: #8b5cf6;
         }
         
         &.is-focus {
-          border-color: #2B5876;
-          box-shadow: 0 0 0 3px rgba(43, 88, 118, 0.1);
+          border-color: #8b5cf6;
+          box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
         }
         
         .el-input__inner {
-          color: #1a1a1a;
+          color: #1e293b;
           height: 40px;
           line-height: 40px;
+          font-size: 14px;
         }
       }
     }
@@ -527,12 +744,12 @@ const handleDefaultModelChange = (modelId) => {
 :deep(.el-slider) {
   .el-slider__runway {
     height: 6px;
-    background-color: #e5e7eb;
+    background-color: #e2e8f0;
     border-radius: 3px;
   }
   
   .el-slider__bar {
-    background: linear-gradient(90deg, #2B5876 0%, #4E4376 100%);
+    background: linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%);
     border-radius: 3px;
   }
   
@@ -543,36 +760,53 @@ const handleDefaultModelChange = (modelId) => {
   .el-slider__button {
     width: 16px;
     height: 16px;
-    border: 2px solid #2B5876;
+    border: 2px solid #8b5cf6;
     background-color: #ffffff;
+    transition: transform 0.3s ease;
     
     &:hover {
       transform: scale(1.2);
     }
+  }
+  
+  .el-slider__stop {
+    background-color: #e2e8f0;
   }
 }
 
 :deep(.el-input-number) {
   .el-input__wrapper {
     background-color: #ffffff;
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 0 12px;
     transition: all 0.3s ease;
+    box-shadow: none;
     
     &:hover {
-      border-color: #2B5876;
+      border-color: #8b5cf6;
     }
     
     &.is-focus {
-      border-color: #2B5876;
-      box-shadow: 0 0 0 3px rgba(43, 88, 118, 0.1);
+      border-color: #8b5cf6;
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
     }
     
     .el-input__inner {
-      color: #1a1a1a;
+      color: #1e293b;
       height: 40px;
       line-height: 40px;
+      font-size: 14px;
+    }
+  }
+  
+  .el-input-number__decrease,
+  .el-input-number__increase {
+    border-color: #e2e8f0;
+    color: #64748b;
+    
+    &:hover {
+      color: #8b5cf6;
     }
   }
 }

@@ -14,9 +14,13 @@
           <el-icon><ChatDotRound /></el-icon>
           <span>聊天</span>
         </el-menu-item>
-        <el-menu-item index="/ai/word-polish">
+        <el-menu-item index="/ai/ai-writing">
+          <el-icon><Edit /></el-icon>
+          <span>AI写作</span>
+        </el-menu-item>
+        <el-menu-item index="/ai/ai-document">
           <el-icon><Document /></el-icon>
-          <span>Word优化</span>
+          <span>AI文档</span>
         </el-menu-item>
         <el-menu-item index="/ai/settings">
           <el-icon><Setting /></el-icon>
@@ -33,7 +37,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ChatDotRound, Setting, Document } from '@element-plus/icons-vue'
+import { ChatDotRound, Setting, Document, Edit } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -48,27 +52,28 @@ const handleSelect = (key) => {
 .ai-layout {
   display: flex;
   min-height: calc(100vh - 64px);
-  background-color: #171717;
-  color: #e0e0e0;
+  background-color: #f8fafc;
+  color: #1e293b;
   
   .ai-sidebar {
     width: 260px;
-    background-color: #1f1f1f;
-    border-right: 1px solid #2a2a2a;
+    background-color: #ffffff;
+    border-right: 1px solid #e2e8f0;
     display: flex;
     flex-direction: column;
     
     .sidebar-header {
       padding: 20px;
-      border-bottom: 1px solid #2a2a2a;
-      background: linear-gradient(180deg, #1f1f1f 0%, #252525 100%);
+      border-bottom: 1px solid #e2e8f0;
+      background: #ffffff;
       
       .sidebar-title {
-        font-size: 1.2em;
+        font-size: 20px;
         font-weight: 600;
-        color: #ffffff;
+        background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
         margin: 0;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
       }
     }
     
@@ -81,7 +86,7 @@ const handleSelect = (key) => {
       :deep(.el-menu-item) {
         height: 44px;
         line-height: 44px;
-        color: #a0a0a0;
+        color: #64748b;
         margin: 4px 0;
         border-radius: 8px;
         transition: all 0.3s ease;
@@ -89,30 +94,30 @@ const handleSelect = (key) => {
         align-items: center;
         
         .el-icon {
-          color: #a0a0a0;
+          color: #64748b;
           margin-right: 12px;
           font-size: 18px;
           transition: all 0.3s ease;
         }
         
         span {
-          font-size: 14px;
+          font-size: 15px;
         }
         
         &:hover {
-          background-color: #2a2a2a;
-          color: #ffffff;
+          background-color: rgba(139, 92, 246, 0.1);
+          color: #8b5cf6;
           transform: translateX(4px);
           
           .el-icon {
-            color: #409EFF;
+            color: #8b5cf6;
           }
         }
         
         &.is-active {
-          background: linear-gradient(90deg, #2B5876 0%, #4E4376 100%);
+          background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
           color: #ffffff;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 2px 8px rgba(139, 92, 246, 0.25);
           
           .el-icon {
             color: #ffffff;
@@ -124,21 +129,9 @@ const handleSelect = (key) => {
   
   .ai-content {
     flex: 1;
-    background-color: #171717;
+    background-color: #f8fafc;
     overflow: hidden;
     position: relative;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, 
-        rgba(43, 88, 118, 0.3) 0%, 
-        rgba(78, 67, 118, 0.3) 100%);
-    }
   }
 }
 </style> 

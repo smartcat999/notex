@@ -12,6 +12,7 @@ declare module 'vue' {
     AILayout: typeof import('./components/ai/AILayout.vue')['default']
     AISettings: typeof import('./components/ai/AISettings.vue')['default']
     AISidebar: typeof import('./components/ai/AISidebar.vue')['default']
+    AIWriting: typeof import('./components/ai/AIWriting.vue')['default']
     AuthorCard: typeof import('./components/AuthorCard.vue')['default']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
     ElBadge: typeof import('element-plus/es')['ElBadge']
