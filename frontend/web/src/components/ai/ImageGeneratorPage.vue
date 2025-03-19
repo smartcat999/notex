@@ -66,11 +66,14 @@
           </el-form-item>
 
           <el-form-item label="图像尺寸">
-            <el-radio-group v-model="imageSize">
-              <el-radio-button label="256x256">小</el-radio-button>
-              <el-radio-button label="512x512">中</el-radio-button>
-              <el-radio-button label="1024x1024">大</el-radio-button>
-            </el-radio-group>
+            <el-select v-model="imageSize" style="width: 200px">
+              <el-option
+                v-for="option in imageSizeOptions"
+                :key="option.value"
+                :label="option.label"
+                :value="option.value"
+              />
+            </el-select>
           </el-form-item>
         </div>
 
@@ -121,32 +124,23 @@ const isInitializing = ref(true);
 
 // 监听模型变化
 watch(() => aiStore.imageModels, (newModels) => {
-  if (newModels.length > 0) {
+  if (newModels.length > 0 && !selectedModel.value) {
     // 如果有默认模型则使用默认模型
-    // console.log(aiStore.currentImageModel);
     if (aiStore.currentImageModel) {
       selectedModel.value = aiStore.currentImageModel;
     } else {
-      // 否则使用第一个模型并设置为默认
+      // 否则使用第一个模型
       selectedModel.value = newModels[0].id;
-      aiStore.saveDefaultImageModel(newModels[0].id);
     }
   }
 }, { immediate: true });
 
 // 监听 currentImageModel 变化
 watch(() => aiStore.currentImageModel, (newModel) => {
-  if (newModel && newModel !== selectedModel.value) {
+  if (newModel && !selectedModel.value) {
     selectedModel.value = newModel;
   }
 }, { immediate: true });
-
-// 监听选中模型变化
-watch(selectedModel, async (newModel) => {
-  if (newModel && newModel !== aiStore.currentImageModel) {
-    await aiStore.saveDefaultImageModel(newModel);
-  }
-});
 
 // 计算属性
 const showApiKeyPrompt = computed(() => {
@@ -163,6 +157,49 @@ const showApiKeyPrompt = computed(() => {
   return !providerSettings?.apiKey;
 });
 
+const imageSizeOptions = computed(() => {
+  if (!selectedModel.value) return [];
+  
+  const model = aiStore.imageModels.find(m => m.id === selectedModel.value);
+  if (!model) return [];
+  
+  // Stability AI SDXL 模型的特殊尺寸选项
+  if (model.provider === 'stabilityai' && model.id.includes('xl')) {
+    return [
+      { label: '1024 x 1024', value: '1024x1024' },
+      { label: '1152 x 896', value: '1152x896' },
+      { label: '1216 x 832', value: '1216x832' },
+      { label: '1344 x 768', value: '1344x768' },
+      { label: '1536 x 640', value: '1536x640' },
+      { label: '640 x 1536', value: '640x1536' },
+      { label: '768 x 1344', value: '768x1344' },
+      { label: '832 x 1216', value: '832x1216' },
+      { label: '896 x 1152', value: '896x1152' }
+    ];
+  }
+  
+  // 其他模型的标准尺寸选项
+  return [
+    { label: '小 (256x256)', value: '256x256' },
+    { label: '中 (512x512)', value: '512x512' },
+    { label: '大 (1024x1024)', value: '1024x1024' }
+  ];
+});
+
+// 监听模型变化时更新尺寸
+watch(selectedModel, (newModel) => {
+  if (newModel) {
+    const model = aiStore.imageModels.find(m => m.id === newModel);
+    if (model?.provider === 'stabilityai' && model.id.includes('xl')) {
+      // 对于 Stability AI SDXL 模型，默认使用 1024x1024
+      imageSize.value = '1024x1024';
+    } else {
+      // 其他模型使用默认的中等尺寸
+      imageSize.value = '512x512';
+    }
+  }
+});
+
 // 初始化函数
 const initializeImageGenerator = async () => {
   try {
@@ -171,18 +208,6 @@ const initializeImageGenerator = async () => {
     // 确保 AI Store 已初始化
     if (!aiStore.initialized) {
       await aiStore.initialize();
-    }
-    
-    // 加载图像模型
-    await aiStore.loadImageModels();
-    
-    // 如果有默认模型，设置为选中模型
-    if (aiStore.currentImageModel) {
-      selectedModel.value = aiStore.currentImageModel;
-    } else if (aiStore.imageModels.length > 0) {
-      // 否则使用第一个可用模型
-      selectedModel.value = aiStore.imageModels[0].id;
-      await aiStore.saveDefaultImageModel(aiStore.imageModels[0].id);
     }
     
   } catch (error) {
@@ -226,7 +251,7 @@ const navigateToSettings = () => {
 const getProviderName = (providerId) => {
   const providers = {
     'openai': 'OpenAI',
-    'stability': 'Stability AI'
+    'stabilityai': 'Stability AI'
   };
   
   return providers[providerId] || providerId;

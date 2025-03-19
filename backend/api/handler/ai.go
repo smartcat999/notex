@@ -9,6 +9,8 @@ import (
 	"notex/api/dto"
 	"notex/api/service"
 	"notex/middleware"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -229,6 +231,9 @@ func getProviderHeaders(provider, apiKey string) map[string]string {
 
 	switch provider {
 	case "openai":
+		headers["Authorization"] = fmt.Sprintf("Bearer %s", apiKey)
+	case "stabilityai":
+		headers["Accept"] = "application/json"
 		headers["Authorization"] = fmt.Sprintf("Bearer %s", apiKey)
 	case "anthropic":
 		headers["x-api-key"] = apiKey
@@ -476,6 +481,16 @@ func getImageGenerationEndpoint(provider string) string {
 	return endpoints[provider]
 }
 
+// 解析图像尺寸
+func parseImageSize(size string) (width, height int) {
+	parts := strings.Split(size, "x")
+	if len(parts) == 2 {
+		width, _ = strconv.Atoi(parts[0])
+		height, _ = strconv.Atoi(parts[1])
+	}
+	return
+}
+
 // HandleImageGeneration 处理图像生成请求
 func (h *AIHandler) HandleImageGeneration(c *gin.Context) {
 	userID := getUserIDFromContext(c)
@@ -543,9 +558,20 @@ func (h *AIHandler) HandleImageGeneration(c *gin.Context) {
 		} else {
 			requestBody["samples"] = 1
 		}
-		// 其他稳定扩散特定参数
+		// Stability AI 特定参数
 		requestBody["steps"] = 30
 		requestBody["cfg_scale"] = 7
+
+		// 设置图像尺寸
+		if req.Size != "" {
+			width, height := parseImageSize(req.Size)
+			requestBody["width"] = width
+			requestBody["height"] = height
+		} else {
+			// 默认使用 1024x1024
+			requestBody["width"] = 1024
+			requestBody["height"] = 1024
+		}
 	default:
 		// 自定义提供商，直接使用所有参数
 		requestBody["prompt"] = req.Prompt
@@ -580,14 +606,6 @@ func (h *AIHandler) HandleImageGeneration(c *gin.Context) {
 
 	// 设置请求头
 	headers := getProviderHeaders(req.Provider, req.APIKey)
-
-	// 针对stability.ai的特殊处理
-	if req.Provider == "stabilityai" {
-		headers["Accept"] = "application/json"
-		headers["Content-Type"] = "application/json"
-		headers["Authorization"] = fmt.Sprintf("Bearer %s", req.APIKey)
-	}
-
 	for k, v := range headers {
 		proxyReq.Header.Set(k, v)
 	}
@@ -627,6 +645,40 @@ func (h *AIHandler) HandleImageGeneration(c *gin.Context) {
 		return
 	}
 
-	// 返回响应
-	c.Data(http.StatusOK, "application/json", body)
+	// 处理不同提供商的响应格式
+	var result map[string]interface{}
+	if err := json.Unmarshal(body, &result); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "解析响应失败"})
+		return
+	}
+
+	// 统一响应格式
+	var images []string
+	switch req.Provider {
+	case "openai":
+		if data, ok := result["data"].([]interface{}); ok {
+			for _, item := range data {
+				if imgMap, ok := item.(map[string]interface{}); ok {
+					if url, ok := imgMap["url"].(string); ok {
+						images = append(images, url)
+					}
+				}
+			}
+		}
+	case "stabilityai":
+		if artifacts, ok := result["artifacts"].([]interface{}); ok {
+			for _, item := range artifacts {
+				if artifact, ok := item.(map[string]interface{}); ok {
+					if base64, ok := artifact["base64"].(string); ok {
+						images = append(images, "data:image/png;base64,"+base64)
+					}
+				}
+			}
+		}
+	}
+
+	// 返回统一格式的响应
+	c.JSON(http.StatusOK, gin.H{
+		"images": images,
+	})
 }
