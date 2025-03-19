@@ -14,6 +14,7 @@ type AIModel struct {
 	ModelID     string    `gorm:"size:100;not null" json:"modelId"`
 	Name        string    `gorm:"size:100;not null" json:"name"`
 	Description string    `gorm:"size:500" json:"description"`
+	Type        string    `gorm:"size:50;not null;default:text" json:"type"`
 	IsPaid      bool      `gorm:"default:false" json:"isPaid"`
 	IsEnabled   bool      `gorm:"default:true" json:"isEnabled"`
 	CreatedAt   time.Time `json:"createdAt"`
@@ -88,11 +89,12 @@ func (AIUserSetting) TableName() string {
 
 // AIDefaultSetting 表示用户的默认AI设置
 type AIDefaultSetting struct {
-	ID           uint      `gorm:"primaryKey" json:"id"`
-	UserID       uint      `gorm:"not null;uniqueIndex" json:"userId"`
-	DefaultModel string    `gorm:"size:100" json:"defaultModel"`
-	CreatedAt    time.Time `json:"createdAt"`
-	UpdatedAt    time.Time `json:"updatedAt"`
+	ID                uint      `gorm:"primaryKey" json:"id"`
+	UserID            uint      `gorm:"not null;uniqueIndex" json:"userId"`
+	DefaultModel      string    `gorm:"size:100" json:"defaultModel"`
+	DefaultImageModel string    `gorm:"size:100" json:"defaultImageModel"`
+	CreatedAt         time.Time `json:"createdAt"`
+	UpdatedAt         time.Time `json:"updatedAt"`
 }
 
 // TableName 指定AIDefaultSetting的表名

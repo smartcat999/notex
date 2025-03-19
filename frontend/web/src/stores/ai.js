@@ -23,6 +23,12 @@ export const useAIStore = defineStore('ai', () => {
   const isInitializing = ref(false)
   const messageSequence = ref(0)
   const conversationThreads = ref({})
+  
+  // 图像生成相关状态
+  const imageModels = ref([])
+  const currentImageModel = ref('')
+  const isGeneratingImage = ref(false)
+  const generatedImages = ref([])
 
   // 消息类型常量
   const MESSAGE_TYPE = {
@@ -69,26 +75,45 @@ export const useAIStore = defineStore('ai', () => {
 
   // 初始化函数
   async function initialize() {
-    if (isInitializing.value) {
+    if (initialized.value) {
       return
     }
     
     try {
-      isInitializing.value = true
+      isLoading.value = true
       
-      if (!modelsLoaded.value) {
-        await loadAvailableModels()
-        modelsLoaded.value = true
+      // 从本地存储加载默认设置
+      const localSettings = JSON.parse(localStorage.getItem('aiDefaultSettings') || '{}')
+      if (localSettings.defaultImageModel) {
+        currentImageModel.value = localSettings.defaultImageModel
       }
       
-      if (userStore.isAuthenticated) {
-        await loadDefaultModel()
-        initialized.value = true
+      // 加载后端默认设置
+      const defaultSettings = await aiService.getDefaultSetting()
+      if (defaultSettings) {
+        currentModel.value = defaultSettings.defaultModel || ''
+        // 如果后端有默认图像模型，覆盖本地设置
+        if (defaultSettings.defaultImageModel) {
+          currentImageModel.value = defaultSettings.defaultImageModel
+          // 更新本地存储
+          const settings = JSON.parse(localStorage.getItem('aiDefaultSettings') || '{}')
+          settings.defaultImageModel = defaultSettings.defaultImageModel
+          localStorage.setItem('aiDefaultSettings', JSON.stringify(settings))
+        }
       }
+      
+      // 加载可用模型
+      await loadAvailableModels()
+      
+      // 加载图像模型
+      await loadImageModels()
+      
+      initialized.value = true
     } catch (error) {
-      console.error('初始化AI设置失败:', error)
+      console.error('初始化AI Store失败:', error)
+      throw error
     } finally {
-      isInitializing.value = false
+      isLoading.value = false
     }
   }
 
@@ -99,27 +124,157 @@ export const useAIStore = defineStore('ai', () => {
     }
     
     try {
-      const response = await axios.get(`${apiBaseUrl}/ai/available-models`)
-      const providers = response.data.providers || []
+      isLoading.value = true
       
-      const models = []
-      providers.forEach(provider => {
-        provider.models.forEach(model => {
-          models.push({
-            id: model.modelId,
-            name: model.name,
-            provider: provider.providerId,
-            description: model.description,
-            isPaid: model.isPaid
-          })
-        })
+      // 获取可用模型列表
+      const response = await axios.get(`${apiBaseUrl}/ai/available-models`, {
+        headers: getAuthHeaders()
       })
       
-      availableModels.value = models
+      if (response.data && response.data.providers) {
+        // 处理提供商和模型数据
+        const providers = response.data.providers
+        const allModels = []
+        
+        providers.forEach(provider => {
+          if (provider.models && provider.models.length > 0) {
+            provider.models.forEach(model => {
+              allModels.push({
+                id: model.modelId,
+                name: model.name,
+                provider: provider.providerId,
+                providerName: provider.name,
+                description: model.description,
+                isPaid: model.isPaid,
+                type: model.type || 'text' // 默认为文本模型
+              })
+            })
+          }
+        })
+        
+        // 更新状态
+        availableModels.value = allModels
+        
+        // 更新文本模型列表
+        updateTextModels()
+        
+        // 加载图像模型
+        try {
+          await loadImageModels()
+        } catch (err) {
+          console.error('加载图像模型失败:', err)
+        }
+      }
     } catch (error) {
       console.error('加载可用模型失败:', error)
-      availableModels.value = []
+      ElMessage.error('加载可用模型失败')
+    } finally {
+      isLoading.value = false
     }
+  }
+  
+  // 加载图像生成模型
+  async function loadImageModels() {
+    try {
+      // 获取所有图像类型的模型
+      const models = await aiService.getModelsByType('image')
+      
+      // 更新图像模型列表
+      imageModels.value = models.map(model => ({
+        id: model.modelId,
+        name: model.name,
+        provider: model.provider,
+        providerName: model.providerName || model.provider,
+        description: model.description,
+        isPaid: model.isPaid,
+        type: 'image'
+      }))
+      
+      // 如果没有当前图像模型但有可用模型，设置第一个为默认
+      if (!currentImageModel.value && imageModels.value.length > 0) {
+        currentImageModel.value = imageModels.value[0].id
+        // 保存到本地存储
+        const settings = JSON.parse(localStorage.getItem('aiDefaultSettings') || '{}')
+        settings.defaultImageModel = currentImageModel.value
+        localStorage.setItem('aiDefaultSettings', JSON.stringify(settings))
+      }
+      
+      return imageModels.value
+    } catch (error) {
+      console.error('加载图像模型失败:', error)
+      throw error
+    }
+  }
+  
+  // 生成图像
+  async function generateImage(prompt, options = {}) {
+    if (!prompt.trim()) {
+      ElMessage.warning('请输入图像描述')
+      return null
+    }
+    
+    if (!currentImageModel.value) {
+      ElMessage.warning('请选择图像生成模型')
+      return null
+    }
+    
+    // 找到当前模型信息
+    const model = imageModels.value.find(m => m.id === currentImageModel.value)
+    if (!model) {
+      ElMessage.warning('选择的模型不可用')
+      return null
+    }
+
+    try {
+      // 获取API设置
+      const settings = JSON.parse(localStorage.getItem('aiProviderSettings') || '{}')
+      const providerSettings = settings[model.provider]
+      
+      if (!providerSettings?.apiKey) {
+        ElMessage.warning(`请先在设置中配置${model.providerName || model.provider}的API密钥`)
+        return null
+      }
+
+      isGeneratingImage.value = true
+      generatedImages.value = []
+      
+      // 创建请求参数
+      const params = {
+        prompt,
+        model: currentImageModel.value,
+        provider: model.provider,
+        n: options.n || 1,
+        size: options.size || '1024x1024',
+        ...options
+      }
+      
+      // 发送请求
+      const images = await aiService.generateImage(params)
+      generatedImages.value = images
+      
+      return images
+    } catch (error) {
+      console.error('生成图像失败:', error)
+      ElMessage.error(`生成图像失败: ${error.message || '未知错误'}`)
+      return null
+    } finally {
+      isGeneratingImage.value = false
+    }
+  }
+  
+  // 设置当前图像模型
+  function setCurrentImageModel(modelId) {
+    currentImageModel.value = modelId
+    // 也可以保存到本地存储
+    localStorage.setItem('currentImageModel', modelId)
+  }
+  
+  // 获取文本模型（过滤出类型为text的模型）
+  const textModels = ref([])
+
+  // 更新文本模型列表
+  function updateTextModels() {
+    textModels.value = availableModels.value.filter(model => model.type === 'text' || !model.type)
   }
 
   // 加载默认模型
@@ -160,24 +315,44 @@ export const useAIStore = defineStore('ai', () => {
 
   // 保存默认模型
   async function saveDefaultModel(modelId) {
+    if (!modelId) return
+    
     try {
-      await axios.post(`${apiBaseUrl}/ai/default-setting`, {
-        defaultModel: modelId
-      }, {
-        headers: getAuthHeaders()
-      })
+      await aiService.saveDefaultSetting(modelId)
       defaultModel.value = modelId
       currentModel.value = modelId
-      
-      const model = availableModels.value.find(m => m.id === modelId)
-      if (model) {
-        currentProvider.value = model.provider
-      }
-      
+      localStorage.setItem('currentModel', modelId)
       return true
     } catch (error) {
       console.error('保存默认模型失败:', error)
-      throw error
+      return false
+    }
+  }
+
+  // 保存默认图像模型
+  async function saveDefaultImageModel(modelId) {
+    if (!modelId) return
+    
+    try {
+      // 更新本地状态
+      currentImageModel.value = modelId
+      
+      // 保存到后端
+      await aiService.saveDefaultSetting({
+        defaultImageModel: modelId
+      })
+      
+      // 保存到本地存储
+      const settings = JSON.parse(localStorage.getItem('aiDefaultSettings') || '{}')
+      settings.defaultImageModel = modelId
+      localStorage.setItem('aiDefaultSettings', JSON.stringify(settings))
+      
+    } catch (error) {
+      console.error('保存默认图像模型失败:', error)
+      // 即使保存到后端失败，也保持本地状态
+      const settings = JSON.parse(localStorage.getItem('aiDefaultSettings') || '{}')
+      settings.defaultImageModel = modelId
+      localStorage.setItem('aiDefaultSettings', JSON.stringify(settings))
     }
   }
 
@@ -847,6 +1022,13 @@ export const useAIStore = defineStore('ai', () => {
     modelsLoaded,
     conversationThreads,
     
+    // 图像生成相关
+    imageModels,
+    currentImageModel,
+    isGeneratingImage,
+    generatedImages,
+    textModels,
+    
     // 类型常量
     MESSAGE_TYPE,
     MESSAGE_STATUS,
@@ -865,11 +1047,18 @@ export const useAIStore = defineStore('ai', () => {
     saveEdit,
     cancelCurrentRequest,
     saveDefaultModel,
+    saveDefaultImageModel,
     testProviderConnection,
     getConversationThread,
     cancelUserMessage,
     isEditing,
     isCancelled,
-    getMessageStatus
+    getMessageStatus,
+    
+    // 图像生成相关方法
+    loadImageModels,
+    generateImage,
+    setCurrentImageModel,
+    updateTextModels
   }
 }) 

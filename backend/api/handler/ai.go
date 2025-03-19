@@ -47,6 +47,7 @@ func (h *AIHandler) RegisterRoutes(router *gin.RouterGroup) {
 		// 公开接口
 		ai.GET("/providers", h.GetAllProviders)
 		ai.GET("/models", h.GetAllModels)
+		ai.GET("/models/type/:type", h.GetModelsByType)
 		ai.GET("/available-models", h.GetAvailableModels)
 
 		// 需要认证的接口
@@ -66,6 +67,9 @@ func (h *AIHandler) RegisterRoutes(router *gin.RouterGroup) {
 			// 聊天相关
 			authenticated.POST("/chat", h.HandleAIChat)
 			authenticated.POST("/test-connection", h.HandleAITest)
+
+			// 图像生成相关
+			authenticated.POST("/generate-image", h.HandleImageGeneration)
 		}
 	}
 }
@@ -439,6 +443,187 @@ func (h *AIHandler) HandleAITest(c *gin.Context) {
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "读取响应失败"})
+		return
+	}
+
+	// 返回响应
+	c.Data(http.StatusOK, "application/json", body)
+}
+
+// GetModelsByType 获取指定类型的AI模型
+func (h *AIHandler) GetModelsByType(c *gin.Context) {
+	modelType := c.Param("type")
+	if modelType == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "模型类型不能为空"})
+		return
+	}
+
+	models, err := h.aiService.GetModelsByType(modelType)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "获取模型列表失败"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"models": models})
+}
+
+// 获取图像生成API端点
+func getImageGenerationEndpoint(provider string) string {
+	endpoints := map[string]string{
+		"openai":      "https://api.openai.com/v1/images/generations",
+		"stabilityai": "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image",
+	}
+	return endpoints[provider]
+}
+
+// HandleImageGeneration 处理图像生成请求
+func (h *AIHandler) HandleImageGeneration(c *gin.Context) {
+	userID := getUserIDFromContext(c)
+
+	var req dto.AIImageGenerationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的请求参数"})
+		return
+	}
+
+	// 获取用户的AI设置
+	setting, err := h.aiService.GetUserSettingByProvider(userID, req.Provider)
+	if err != nil {
+		// 如果提供了API密钥，则使用请求中的API密钥
+		if req.APIKey == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "未找到用户AI设置，请先配置API密钥"})
+			return
+		}
+	} else if req.APIKey == "" {
+		// 使用用户保存的API密钥
+		req.APIKey = setting.APIKey
+	}
+
+	// 获取API端点
+	endpoint := req.Endpoint
+	if endpoint == "" {
+		if setting != nil && setting.Endpoint != "" {
+			endpoint = setting.Endpoint
+		} else {
+			endpoint = getImageGenerationEndpoint(req.Provider)
+			if endpoint == "" {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "无效的提供商或缺少端点"})
+				return
+			}
+		}
+	}
+
+	// 准备请求体
+	requestBody := map[string]interface{}{}
+
+	// 根据不同提供商设置特定的请求格式
+	switch req.Provider {
+	case "openai":
+		requestBody["prompt"] = req.Prompt
+		requestBody["model"] = req.Model
+		requestBody["n"] = req.N
+		if req.N == 0 {
+			requestBody["n"] = 1
+		}
+		if req.Size != "" {
+			requestBody["size"] = req.Size
+		} else {
+			requestBody["size"] = "1024x1024"
+		}
+		requestBody["response_format"] = "url"
+	case "stabilityai":
+		requestBody["text_prompts"] = []map[string]interface{}{
+			{
+				"text":   req.Prompt,
+				"weight": 1,
+			},
+		}
+		if req.N > 0 {
+			requestBody["samples"] = req.N
+		} else {
+			requestBody["samples"] = 1
+		}
+		// 其他稳定扩散特定参数
+		requestBody["steps"] = 30
+		requestBody["cfg_scale"] = 7
+	default:
+		// 自定义提供商，直接使用所有参数
+		requestBody["prompt"] = req.Prompt
+		requestBody["model"] = req.Model
+		if req.N > 0 {
+			requestBody["n"] = req.N
+		}
+		if req.Size != "" {
+			requestBody["size"] = req.Size
+		}
+	}
+
+	// 添加其他参数
+	if req.Params != nil {
+		for k, v := range req.Params {
+			requestBody[k] = v
+		}
+	}
+
+	jsonBody, err := json.Marshal(requestBody)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "请求体序列化失败"})
+		return
+	}
+
+	// 创建请求
+	proxyReq, err := http.NewRequest("POST", endpoint, bytes.NewBuffer(jsonBody))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建请求失败"})
+		return
+	}
+
+	// 设置请求头
+	headers := getProviderHeaders(req.Provider, req.APIKey)
+
+	// 针对stability.ai的特殊处理
+	if req.Provider == "stabilityai" {
+		headers["Accept"] = "application/json"
+		headers["Content-Type"] = "application/json"
+		headers["Authorization"] = fmt.Sprintf("Bearer %s", req.APIKey)
+	}
+
+	for k, v := range headers {
+		proxyReq.Header.Set(k, v)
+	}
+
+	// 发送请求
+	client := &http.Client{}
+	resp, err := client.Do(proxyReq)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "发送请求失败: " + err.Error()})
+		return
+	}
+	defer resp.Body.Close()
+
+	// 读取响应
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "读取响应失败"})
+		return
+	}
+
+	// 检查响应状态
+	if resp.StatusCode != http.StatusOK {
+		var errorMsg string
+		// 尝试解析错误消息
+		var errorResp map[string]interface{}
+		if err := json.Unmarshal(body, &errorResp); err == nil {
+			if errObj, ok := errorResp["error"].(map[string]interface{}); ok {
+				if msg, ok := errObj["message"].(string); ok {
+					errorMsg = msg
+				}
+			}
+		}
+		if errorMsg == "" {
+			errorMsg = string(body)
+		}
+		c.JSON(resp.StatusCode, gin.H{"error": "API请求失败: " + errorMsg})
 		return
 	}
 

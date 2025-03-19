@@ -22,6 +22,10 @@
           <el-icon><Document /></el-icon>
           <span>AI文档</span>
         </el-menu-item>
+        <el-menu-item index="/ai/image-generator">
+          <el-icon><Picture /></el-icon>
+          <span>图像生成</span>
+        </el-menu-item>
         <el-menu-item index="/ai/settings">
           <el-icon><Setting /></el-icon>
           <span>设置</span>
@@ -37,7 +41,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ChatDotRound, Setting, Document, Edit } from '@element-plus/icons-vue'
+import { ChatDotRound, Setting, Document, Edit, Picture } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()

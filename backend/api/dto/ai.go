@@ -19,6 +19,7 @@ type AIModelResponse struct {
 	ModelID     string `json:"modelId"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
+	Type        string `json:"type"`
 	IsPaid      bool   `json:"isPaid"`
 	IsEnabled   bool   `json:"isEnabled"`
 }
@@ -44,13 +45,15 @@ type AIUserSettingResponse struct {
 
 // AIDefaultSettingRequest 表示默认AI设置请求
 type AIDefaultSettingRequest struct {
-	DefaultModel string `json:"defaultModel" binding:"required"`
+	DefaultModel      string `json:"defaultModel,omitempty"`
+	DefaultImageModel string `json:"defaultImageModel,omitempty"`
 }
 
 // AIDefaultSettingResponse 表示默认AI设置响应
 type AIDefaultSettingResponse struct {
-	ID           uint   `json:"id"`
-	DefaultModel string `json:"defaultModel"`
+	ID                uint   `json:"id"`
+	DefaultModel      string `json:"defaultModel"`
+	DefaultImageModel string `json:"defaultImageModel"`
 }
 
 // AIChatRequest 表示AI聊天请求
@@ -68,6 +71,23 @@ type AITestConnectionRequest struct {
 	APIKey   string `json:"apiKey" binding:"required"`
 	Endpoint string `json:"endpoint"`
 	Model    string `json:"model" binding:"required"`
+}
+
+// AIImageGenerationRequest 表示图像生成请求
+type AIImageGenerationRequest struct {
+	Provider string                 `json:"provider" binding:"required"`
+	Model    string                 `json:"model" binding:"required"`
+	Prompt   string                 `json:"prompt" binding:"required"`
+	N        int                    `json:"n,omitempty"`
+	Size     string                 `json:"size,omitempty"`
+	APIKey   string                 `json:"apiKey,omitempty"`
+	Endpoint string                 `json:"endpoint,omitempty"`
+	Params   map[string]interface{} `json:"params,omitempty"`
+}
+
+// AIImageGenerationResponse 表示图像生成响应
+type AIImageGenerationResponse struct {
+	Images []string `json:"images"`
 }
 
 // AIAvailableModelsResponse 表示可用AI模型响应
@@ -105,6 +125,7 @@ func ConvertToAIModelResponse(model *model.AIModel) AIModelResponse {
 		ModelID:     model.ModelID,
 		Name:        model.Name,
 		Description: model.Description,
+		Type:        model.Type,
 		IsPaid:      model.IsPaid,
 		IsEnabled:   model.IsEnabled,
 	}
@@ -134,7 +155,8 @@ func ConvertToAIUserSettingResponse(setting *model.AIUserSetting) AIUserSettingR
 // ConvertToAIDefaultSettingResponse 将模型转换为响应
 func ConvertToAIDefaultSettingResponse(setting *model.AIDefaultSetting) AIDefaultSettingResponse {
 	return AIDefaultSettingResponse{
-		ID:           setting.ID,
-		DefaultModel: setting.DefaultModel,
+		ID:                setting.ID,
+		DefaultModel:      setting.DefaultModel,
+		DefaultImageModel: setting.DefaultImageModel,
 	}
 }

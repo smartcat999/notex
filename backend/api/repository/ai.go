@@ -15,6 +15,7 @@ type AIRepository interface {
 	GetModelsByProvider(provider string) ([]model.AIModel, error)
 	GetAllModels() ([]model.AIModel, error)
 	GetModelByID(modelID string) (*model.AIModel, error)
+	GetModelsByType(modelType string) ([]model.AIModel, error)
 
 	// 用户设置相关
 	GetUserSettings(userID uint) ([]model.AIUserSetting, error)
@@ -146,4 +147,11 @@ func (r *AIRepositoryImpl) SaveDefaultSetting(setting *model.AIDefaultSetting) e
 	}
 
 	return result.Error
+}
+
+// GetModelsByType 获取指定类型的所有模型
+func (r *AIRepositoryImpl) GetModelsByType(modelType string) ([]model.AIModel, error) {
+	var models []model.AIModel
+	err := r.db.Where("type = ? AND is_enabled = ?", modelType, true).Find(&models).Error
+	return models, err
 }

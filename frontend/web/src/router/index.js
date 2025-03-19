@@ -98,23 +98,53 @@ const router = createRouter({
     },
     {
       path: '/ai',
-      component: () => import('@/components/ai/AILayout.vue'),
+      component: AILayout,
+      redirect: '/ai/chat',
       children: [
         {
           path: 'chat',
-          component: () => import('@/components/ai/AIChat.vue')
+          name: 'AIChat',
+          component: () => import('@/components/ai/AIChat.vue'),
+          meta: {
+            requiresAuth: true,
+            title: 'AI 助手'
+          }
         },
         {
           path: 'settings',
-          component: () => import('@/components/ai/AISettings.vue')
+          name: 'AISettings',
+          component: () => import('@/components/ai/AISettings.vue'),
+          meta: {
+            requiresAuth: true,
+            title: 'AI 设置'
+          }
         },
         {
           path: 'ai-document',
-          component: () => import('@/components/ai/WordPolish.vue')
+          name: 'WordPolish',
+          component: () => import('@/components/ai/WordPolish.vue'),
+          meta: {
+            requiresAuth: true,
+            title: 'AI 文档'
+          }
         },
         {
           path: 'ai-writing',
-          component: () => import('@/components/ai/AIWriting.vue')
+          name: 'AIWriting',
+          component: () => import('@/components/ai/AIWriting.vue'),
+          meta: {
+            requiresAuth: true,
+            title: 'AI 写作'
+          }
+        },
+        {
+          path: 'image-generator',
+          name: 'ImageGenerator',
+          component: () => import('@/components/ai/ImageGeneratorPage.vue'),
+          meta: {
+            requiresAuth: true,
+            title: 'AI 图像生成'
+          }
         }
       ]
     },

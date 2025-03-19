@@ -1,0 +1,2 @@
+-- 从ai_default_settings表中删除default_image_model字段
+ALTER TABLE ai_default_settings DROP COLUMN default_image_model; 

@@ -5,6 +5,8 @@ import (
 	"notex/api/dto"
 	"notex/api/repository"
 	"notex/model"
+
+	"gorm.io/gorm"
 )
 
 // AIService 定义AI相关的业务逻辑接口
@@ -14,6 +16,7 @@ type AIService interface {
 	GetProviderByID(providerID string) (*dto.AIProviderResponse, error)
 	GetModelsByProvider(provider string) ([]dto.AIModelResponse, error)
 	GetAllModels() ([]dto.AIModelResponse, error)
+	GetModelsByType(modelType string) ([]dto.AIModelResponse, error)
 	GetAvailableModels() (*dto.AIAvailableModelsResponse, error)
 
 	// 用户设置相关
@@ -83,6 +86,21 @@ func (s *AIServiceImpl) GetModelsByProvider(provider string) ([]dto.AIModelRespo
 // GetAllModels 获取所有AI模型
 func (s *AIServiceImpl) GetAllModels() ([]dto.AIModelResponse, error) {
 	models, err := s.repo.GetAllModels()
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]dto.AIModelResponse, len(models))
+	for i, model := range models {
+		result[i] = dto.ConvertToAIModelResponse(&model)
+	}
+
+	return result, nil
+}
+
+// GetModelsByType 获取指定类型的所有模型
+func (s *AIServiceImpl) GetModelsByType(modelType string) ([]dto.AIModelResponse, error) {
+	models, err := s.repo.GetModelsByType(modelType)
 	if err != nil {
 		return nil, err
 	}
@@ -213,16 +231,40 @@ func (s *AIServiceImpl) GetDefaultSetting(userID uint) (*dto.AIDefaultSettingRes
 
 // SaveDefaultSetting 保存用户的默认AI设置
 func (s *AIServiceImpl) SaveDefaultSetting(userID uint, req *dto.AIDefaultSettingRequest) (*dto.AIDefaultSettingResponse, error) {
-	// 验证模型是否存在
-	_, err := s.repo.GetModelByID(req.DefaultModel)
-	if err != nil {
-		return nil, errors.New("模型不存在")
+	// 获取当前设置
+	currentSetting, err := s.repo.GetDefaultSetting(userID)
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, err
 	}
 
-	// 转换为模型
+	// 创建或更新设置
 	setting := &model.AIDefaultSetting{
-		UserID:       userID,
-		DefaultModel: req.DefaultModel,
+		UserID: userID,
+	}
+
+	// 如果有现有设置，则保留ID
+	if currentSetting != nil {
+		setting.ID = currentSetting.ID
+		setting.DefaultModel = currentSetting.DefaultModel
+		setting.DefaultImageModel = currentSetting.DefaultImageModel
+	}
+
+	// 验证并更新默认文本模型
+	if req.DefaultModel != "" {
+		_, err := s.repo.GetModelByID(req.DefaultModel)
+		if err != nil {
+			return nil, errors.New("指定的默认文本模型不存在")
+		}
+		setting.DefaultModel = req.DefaultModel
+	}
+
+	// 验证并更新默认图像模型
+	if req.DefaultImageModel != "" {
+		_, err := s.repo.GetModelByID(req.DefaultImageModel)
+		if err != nil {
+			return nil, errors.New("指定的默认图像模型不存在")
+		}
+		setting.DefaultImageModel = req.DefaultImageModel
 	}
 
 	// 保存设置
