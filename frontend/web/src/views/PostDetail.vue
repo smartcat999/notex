@@ -291,57 +291,66 @@ const updateCodeSections = () => {
 
   const pres = contentRef.value.querySelectorAll('pre')
   pres.forEach(pre => {
-    if (!pre.querySelector('.pre-wrapper')) {
-      const code = pre.querySelector('code')
-      
-      // 创建包装容器
-      const wrapper = document.createElement('div')
-      wrapper.className = 'pre-wrapper'
-      
-      // 移动代码到包装容器
-      if (code) {
-        pre.removeChild(code)
-        wrapper.appendChild(code)
-      }
-      pre.appendChild(wrapper)
+    // Skip if already processed
+    if (pre.querySelector('.pre-wrapper')) return
+    
+    const code = pre.querySelector('code')
+    
+    // 创建包装容器
+    const wrapper = document.createElement('div')
+    wrapper.className = 'pre-wrapper'
+    
+    // 移动代码到包装容器
+    if (code) {
+      pre.removeChild(code)
+      wrapper.appendChild(code)
+    }
+    pre.appendChild(wrapper)
 
-      // 添加复制按钮
-      if (!pre.querySelector('.copy-button')) {
-        const button = document.createElement('button')
-        button.className = 'copy-button'
-        button.innerHTML = `
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-          </svg>
-          复制
-        `
-        button.addEventListener('click', () => {
-          const text = code.textContent
-          navigator.clipboard.writeText(text).then(() => {
+    // 添加语言标签
+    if (!pre.querySelector('.language-label') && pre.hasAttribute('data-language')) {
+      const languageLabel = document.createElement('span')
+      languageLabel.className = 'language-label'
+      languageLabel.textContent = pre.getAttribute('data-language')
+      pre.appendChild(languageLabel)
+    }
+
+    // 添加复制按钮
+    if (!pre.querySelector('.copy-button')) {
+      const button = document.createElement('button')
+      button.className = 'copy-button'
+      button.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        复制
+      `
+      button.addEventListener('click', () => {
+        const text = code.textContent
+        navigator.clipboard.writeText(text).then(() => {
+          button.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            已复制
+          `
+          button.classList.add('copied')
+          setTimeout(() => {
             button.innerHTML = `
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
               </svg>
-              已复制
+              复制
             `
-            button.classList.add('copied')
-            setTimeout(() => {
-              button.innerHTML = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                </svg>
-                复制
-              `
-              button.classList.remove('copied')
-            }, 2000)
-          }).catch(() => {
-            ElMessage.error('复制失败')
-          })
+            button.classList.remove('copied')
+          }, 2000)
+        }).catch(() => {
+          ElMessage.error('复制失败')
         })
-        pre.appendChild(button)
-      }
+      })
+      pre.appendChild(button)
     }
   })
 }
@@ -695,10 +704,16 @@ onUnmounted(() => {
 
     h1, h2, h3, h4, h5, h6 {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      margin: 2em 0 1em;
+      margin: 2em 0 0.8em;
       font-weight: 600;
       line-height: 1.3;
       letter-spacing: -0.02em;
+      position: relative;
+      padding-left: 0;
+      background: transparent;
+      box-shadow: none;
+      border-radius: 0;
+      border-left: none;
 
       &:first-child {
         margin-top: 0.5em;
@@ -706,40 +721,44 @@ onUnmounted(() => {
     }
 
     h1 {
-      font-size: 2.4em;
+      font-size: 2.2em;
       color: #1a365d;
-      margin: 1em 0 0.8em;
+      margin: 1.2em 0 0.8em;
       position: relative;
       font-weight: 700;
+      padding-bottom: 0.5em;
+      border-bottom: 2px solid rgba(26, 54, 93, 0.1);
 
       &::after {
         content: '';
         position: absolute;
-        bottom: -0.3em;
+        bottom: -2px;
         left: 0;
         width: 80px;
-        height: 4px;
+        height: 2px;
         background: linear-gradient(90deg, #1a365d, rgba(26, 54, 93, 0.1));
         border-radius: 2px;
       }
     }
 
     h2 {
-      font-size: 1.8em;
+      font-size: 1.7em;
       color: #2d4a6d;
       margin: 1.8em 0 0.8em;
       position: relative;
       font-weight: 600;
+      padding-bottom: 0.5em;
+      border-bottom: 1px solid rgba(45, 74, 109, 0.1);
 
       &::after {
         content: '';
         position: absolute;
-        bottom: -0.3em;
+        bottom: -1px;
         left: 0;
         width: 60px;
-        height: 3px;
+        height: 1px;
         background: linear-gradient(90deg, rgba(45, 74, 109, 0.8), rgba(45, 74, 109, 0.1));
-        border-radius: 1.5px;
+        border-radius: 1px;
       }
     }
 
@@ -843,21 +862,28 @@ onUnmounted(() => {
         min-width: 100%;
       }
 
-      &::before {
-        content: attr(data-language);
+      /* 通过 DOM 添加语言标签 */
+      &[data-language]::after {
+        display: none;
+      }
+
+      .language-label {
         position: absolute;
         top: 8px;
-        right: 85px;
+        left: 16px;
         font-size: 0.7em;
-        color: #94a3b8;
+        color: #64748b;
+        font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        font-weight: 500;
         background: #f1f5f9;
-        padding: 2px 6px;
-        border-radius: 3px;
+        padding: 2px 8px;
+        border-radius: 4px;
         border: 1px solid #e2e8f0;
         z-index: 2;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .copy-button {

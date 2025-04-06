@@ -74,7 +74,7 @@
       destroy-on-close
       fullscreen
     >
-      <div class="preview-content">
+      <div class="preview-content" ref="previewContentRef">
         <div class="post-header" :class="{ 'no-cover': !currentDraft?.cover }">
           <div class="post-cover" v-if="currentDraft?.cover">
             <img :src="currentDraft.cover" :alt="currentDraft.title">
@@ -124,7 +124,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, View, Calendar, ChatDotRound } from '@element-plus/icons-vue'
@@ -133,6 +133,8 @@ import { formatDate } from '@/utils/date'
 import { useUserStore } from '@/stores/user'
 import MarkdownPreview from '@/components/MarkdownPreview.vue'
 import AuthorCard from '@/components/AuthorCard.vue'
+import hljs from 'highlight.js'
+import 'highlight.js/styles/github.css'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -145,6 +147,7 @@ const searchQuery = ref('')
 const searchTimeout = ref(null)
 const previewDialogVisible = ref(false)
 const currentDraft = ref(null)
+const previewContentRef = ref(null)
 
 const fetchDrafts = async () => {
   loading.value = true
@@ -234,14 +237,101 @@ const handlePreview = async (draft) => {
     const draftDetail = await getDraft(draft.id)
     currentDraft.value = draftDetail
     previewDialogVisible.value = true
+    nextTick(() => {
+      updateCodeSections()
+    })
   } catch (error) {
     console.error('Failed to load draft for preview:', error)
     ElMessage.error('加载预览失败')
   }
 }
 
+// 更新代码块位置和样式
+const updateCodeSections = () => {
+  nextTick(() => {
+    const previewElement = document.querySelector('.preview-dialog .post-content')
+    if (!previewElement) return
+    
+    const pres = previewElement.querySelectorAll('pre')
+    pres.forEach(pre => {
+      // Skip if already processed
+      if (pre.querySelector('.pre-wrapper')) return
+      
+      const code = pre.querySelector('code')
+      
+      // 创建包装容器
+      const wrapper = document.createElement('div')
+      wrapper.className = 'pre-wrapper'
+      
+      // 移动代码到包装容器
+      if (code) {
+        pre.removeChild(code)
+        wrapper.appendChild(code)
+      }
+      pre.appendChild(wrapper)
+
+      // 添加语言标签
+      if (!pre.querySelector('.language-label') && pre.hasAttribute('data-language')) {
+        const languageLabel = document.createElement('span')
+        languageLabel.className = 'language-label'
+        languageLabel.textContent = pre.getAttribute('data-language')
+        pre.appendChild(languageLabel)
+      }
+
+      // 添加复制按钮
+      if (!pre.querySelector('.copy-button')) {
+        const button = document.createElement('button')
+        button.className = 'copy-button'
+        button.innerHTML = `
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          复制
+        `
+        button.addEventListener('click', () => {
+          const text = code.textContent
+          navigator.clipboard.writeText(text).then(() => {
+            button.innerHTML = `
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              已复制
+            `
+            button.classList.add('copied')
+            setTimeout(() => {
+              button.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                复制
+              `
+              button.classList.remove('copied')
+            }, 2000)
+          }).catch(() => {
+            ElMessage.error('复制失败')
+          })
+        })
+        pre.appendChild(button)
+      }
+    })
+  })
+}
+
+// Watch for dialog visibility changes
+watch(previewDialogVisible, (newValue) => {
+  if (newValue === true) {
+    // When dialog becomes visible, update code sections after DOM update
+    nextTick(() => {
+      updateCodeSections()
+    })
+  }
+})
+
 onMounted(() => {
   fetchDrafts()
+  updateCodeSections()
 })
 </script>
 
@@ -679,17 +769,127 @@ onMounted(() => {
       border-radius: 16px;
       padding: 40px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      
+      /* Headings */
+      :deep(h1), :deep(h2), :deep(h3), :deep(h4), :deep(h5), :deep(h6) {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        margin: 1.8em 0 0.9em;
+        font-weight: 600;
+        line-height: 1.3;
+        color: #1f2937;
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+        border-radius: 0;
+        border-left: none;
+        position: relative;
+
+        &:first-child {
+          margin-top: 0.5em;
+        }
+      }
+
+      :deep(h1) {
+        font-size: 2.2em;
+        color: #1a365d;
+        margin: 1.2em 0 0.8em;
+        position: relative;
+        font-weight: 700;
+        padding-bottom: 0.5em;
+        border-bottom: 2px solid rgba(26, 54, 93, 0.1);
+
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          left: 0;
+          width: 80px;
+          height: 2px;
+          background: linear-gradient(90deg, #1a365d, rgba(26, 54, 93, 0.1));
+          border-radius: 2px;
+        }
+      }
+
+      :deep(h2) {
+        font-size: 1.7em;
+        color: #2d4a6d;
+        margin: 1.8em 0 0.8em;
+        position: relative;
+        font-weight: 600;
+        padding-bottom: 0.5em;
+        border-bottom: 1px solid rgba(45, 74, 109, 0.1);
+
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: -1px;
+          left: 0;
+          width: 60px;
+          height: 1px;
+          background: linear-gradient(90deg, rgba(45, 74, 109, 0.8), rgba(45, 74, 109, 0.1));
+          border-radius: 1px;
+        }
+      }
+
+      :deep(h3) {
+        font-size: 1.4em;
+        color: #34557a;
+        margin: 1.5em 0 0.8em;
+        position: relative;
+        padding-left: 1em;
+        font-weight: 600;
+
+        &::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 0.2em;
+          bottom: 0.2em;
+          width: 3px;
+          background: linear-gradient(180deg, #34557a, rgba(52, 85, 122, 0.2));
+          border-radius: 1.5px;
+        }
+      }
+      
+      :deep(h4) {
+        font-size: 1.2em;
+        color: #3d5a7a;
+        margin: 1.2em 0 0.6em;
+        font-weight: 600;
+      }
+
+      :deep(h5) {
+        font-size: 1.1em;
+        color: #456789;
+        margin: 1em 0 0.5em;
+        font-weight: 500;
+      }
+
+      :deep(h6) {
+        font-size: 1em;
+        color: #516b88;
+        margin: 1em 0 0.5em;
+        font-weight: 500;
+      }
+      
+      /* Paragraphs */
+      :deep(p) {
+        margin: 1em 0;
+        line-height: 1.8;
+        color: #2c3e50;
+      }
 
       :deep(ol),
       :deep(ul) {
-        line-height: 1.4;
-        margin: 0.3em 0;
-        padding-left: 1.2em;
+        line-height: 1.6;
+        margin: 1em 0;
+        padding-left: 1.5em;
 
         li {
-          margin: 0.1em 0;
+          margin: 0.5em 0;
           padding-left: 0.2em;
-          line-height: 1.4;
+          line-height: 1.6;
+          color: #2c3e50;
 
           &::marker {
             color: #2B5876;
@@ -697,7 +897,7 @@ onMounted(() => {
 
           p {
             margin: 0;
-            line-height: 1.4;
+            line-height: 1.6;
           }
         }
       }
@@ -828,16 +1028,28 @@ onMounted(() => {
           }
         }
 
+        /* Replace ::before with a language-label element */
         &[data-language]::before {
-          content: attr(data-language);
+          display: none;
+        }
+        
+        .language-label {
           position: absolute;
-          top: 6px;
+          top: 8px;
           left: 16px;
           font-size: 0.7em;
           color: #64748b;
           font-weight: 500;
           text-transform: uppercase;
           letter-spacing: 0.05em;
+          background: #f1f5f9;
+          padding: 2px 8px;
+          border-radius: 4px;
+          border: 1px solid #e2e8f0;
+          z-index: 2;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
         }
       }
 
@@ -849,6 +1061,48 @@ onMounted(() => {
         border-radius: 3px;
         font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
         color: #2B5876;
+      }
+      
+      :deep(blockquote) {
+        margin: 1.5em 0;
+        padding: 1em 1.5em;
+        border-left: 4px solid #2d4a6d;
+        background: rgba(45, 74, 109, 0.03);
+        border-radius: 0 8px 8px 0;
+        color: #4a5568;
+
+        p {
+          margin: 0;
+        }
+      }
+      
+      :deep(table) {
+        width: 100%;
+        margin: 1.5em 0;
+        border-collapse: collapse;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+
+        th, td {
+          padding: 12px 16px;
+          border: 1px solid #e2e8f0;
+          text-align: left;
+        }
+
+        th {
+          background: #f8fafc;
+          font-weight: 600;
+          color: #2c3e50;
+        }
+
+        tr:nth-child(even) {
+          background: #f8fafc;
+        }
+
+        tr:hover {
+          background: #f1f5f9;
+        }
       }
     }
   }
