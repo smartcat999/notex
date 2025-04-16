@@ -1,8 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import AILayout from '@/components/ai/AILayout.vue'
-import AIChat from '@/components/ai/AIChat.vue'
 import AISettings from '@/components/ai/AISettings.vue'
+import AISimplified from '@/components/ai/AISimplified.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -98,55 +97,15 @@ const router = createRouter({
     },
     {
       path: '/ai',
-      component: AILayout,
-      redirect: '/ai/chat',
-      children: [
-        {
-          path: 'chat',
-          name: 'AIChat',
-          component: () => import('@/components/ai/AIChat.vue'),
-          meta: {
-            requiresAuth: true,
-            title: 'AI 助手'
-          }
-        },
-        {
-          path: 'settings',
-          name: 'AISettings',
-          component: () => import('@/components/ai/AISettings.vue'),
-          meta: {
-            requiresAuth: true,
-            title: 'AI 设置'
-          }
-        },
-        {
-          path: 'ai-document',
-          name: 'WordPolish',
-          component: () => import('@/components/ai/WordPolish.vue'),
-          meta: {
-            requiresAuth: true,
-            title: 'AI 文档'
-          }
-        },
-        {
-          path: 'ai-writing',
-          name: 'AIWriting',
-          component: () => import('@/components/ai/AIWriting.vue'),
-          meta: {
-            requiresAuth: true,
-            title: 'AI 写作'
-          }
-        },
-        {
-          path: 'image-generator',
-          name: 'ImageGenerator',
-          component: () => import('@/components/ai/ImageGeneratorPage.vue'),
-          meta: {
-            requiresAuth: true,
-            title: 'AI 图像生成'
-          }
-        }
-      ]
+      name: 'AISimplified',
+      component: AISimplified,
+      meta: { requiresAuth: true, adminOnly: true, title: 'AI 助手' }
+    },
+    {
+      path: '/ai/settings',
+      name: 'AISettings',
+      component: AISettings,
+      meta: { requiresAuth: true, adminOnly: true, title: 'AI 设置' }
     },
     {
       path: '/:pathMatch(.*)*',
@@ -162,6 +121,9 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth && !userStore.isAuthenticated) {
     // 如果需要认证但未登录，重定向到公共页面
     next('/public')
+  } else if (to.meta.adminOnly && userStore.user?.role === 'user') {
+    // 如果页面仅管理员可访问且当前用户是普通用户，重定向到首页
+    next('/')
   } else if (to.path === '/login' && userStore.isAuthenticated) {
     // 如果已登录还访问登录页，重定向到首页
     next('/')

@@ -12,168 +12,199 @@
     </div>
 
     <!-- 内容区域 -->
-    <div v-else>
-      <el-tabs v-model="activeTab" tab-position="left" class="settings-tabs">
-        <!-- 提供商设置 -->
-        <el-tab-pane 
-          v-for="provider in aiProviders" 
-          :key="provider.providerId" 
-          :label="provider.name" 
-          :name="provider.providerId"
-        >
-          <div class="provider-settings">
-            <h3>{{ provider.name }} 设置</h3>
-            
-            <el-form :model="providerSettings[provider.providerId]" label-position="top">
-              <el-form-item label="API 密钥">
-                <div class="api-key-input">
-                  <el-input 
-                    v-model="providerSettings[provider.providerId].apiKey" 
-                    placeholder="输入您的API密钥"
-                    :type="apiKeyVisibility[provider.providerId] ? 'text' : 'password'"
-                  />
-                  <el-button 
-                    @click="toggleApiKeyVisibility(provider.providerId)" 
-                    :icon="apiKeyVisibility[provider.providerId] ? 'View' : 'Hide'"
-                    type="text"
-                    class="visibility-toggle"
-                  ></el-button>
-                </div>
-                <!-- 调试显示 -->
-                <div v-if="isDev" class="debug-info">
-                  密钥长度: {{ providerSettings[provider.providerId]?.apiKey?.length || 0 }}
-                  <br>密钥开头: {{ providerSettings[provider.providerId]?.apiKey?.substring(0, 5) || '' }}
-                </div>
-              </el-form-item>
-              
-              <el-form-item label="API 端点" v-if="provider.hasEndpoint">
-                <el-input 
-                  v-model="providerSettings[provider.providerId].endpoint" 
-                  placeholder="输入API端点URL"
-                />
-              </el-form-item>
+    <div v-else class="settings-main">
+      <!-- 左侧提供商列表 -->
+      <div class="provider-list">
+        <h3 class="list-title">AI 提供商</h3>
+        <ul class="provider-menu">
+          <li 
+            v-for="provider in aiProviders" 
+            :key="provider.providerId"
+            :class="{ active: activeTab === provider.providerId }"
+            @click="activeTab = provider.providerId"
+          >
+            <div class="provider-icon" :class="provider.providerId">
+              <span>{{ provider.name.substring(0, 2) }}</span>
+            </div>
+            <span class="provider-name">{{ provider.name }}</span>
+          </li>
+        </ul>
+      </div>
 
-              <div class="api-actions">
-                <el-button type="primary" @click="saveSettings" :loading="isSubmitting">
-                  保存设置
-                </el-button>
-                <el-button @click="testModelConnection(provider.providerId)" :loading="isSubmitting">
-                  测试连接
-                </el-button>
-              </div>
-              
-              <el-divider>模型列表</el-divider>
-              
-              <!-- 统一模型配置区域 -->
-              <div class="unified-models-list">
-                <!-- 文本模型部分 -->
-                <div class="model-type-section" v-if="getProviderTextModels(provider.providerId).length > 0">
-                  <h4>文本模型</h4>
-                  <el-table :data="getProviderTextModels(provider.providerId)" style="width: 100%" :fit="false" :row-class-name="getRowClassName">
-                    <el-table-column label="模型" min-width="180" width="180">
-                      <template #default="scope">
-                        <div class="model-name">
-                          <span>{{ scope.row.name }}</span>
-                          <el-tag size="small" v-if="scope.row.isPaid" type="danger">付费</el-tag>
-                        </div>
-                      </template>
-                    </el-table-column>
-                    <el-table-column label="启用" width="60" align="center">
-                      <template #default="scope">
-                        <el-checkbox 
-                          v-model="providerSettings[provider.providerId].enabledModels[scope.row.modelId]"
-                        ></el-checkbox>
-                      </template>
-                    </el-table-column>
-                    <el-table-column label="默认" width="100" align="center">
-                      <template #default="scope">
-                        <el-radio
-                          v-model="defaultModel"
-                          :label="scope.row.modelId"
-                          @change="handleModelSelection(scope.row.modelId)"
-                          :disabled="!providerSettings[provider.providerId].enabledModels[scope.row.modelId]"
-                        ></el-radio>
-                      </template>
-                    </el-table-column>
-                    <el-table-column label="参数配置" min-width="400">
-                      <template #default="scope">
-                        <div class="model-params" v-if="providerSettings[provider.providerId].enabledModels[scope.row.modelId]">
-                          <div class="param-item">
-                            <span class="param-label">温度：</span>
-                            <el-slider 
-                              v-model="providerSettings[provider.providerId].modelParams[scope.row.modelId].temperature" 
-                              :min="0" 
-                              :max="1" 
-                              :step="0.1"
-                              show-stops
-                            ></el-slider>
-                            <span class="param-value">{{ providerSettings[provider.providerId].modelParams[scope.row.modelId].temperature }}</span>
-                          </div>
-                          <div class="param-item">
-                            <span class="param-label">最大输出长度：</span>
-                            <el-input-number 
-                              v-model="providerSettings[provider.providerId].modelParams[scope.row.modelId].maxTokens" 
-                              :min="100" 
-                              :max="8000"
-                              :step="100"
-                              size="small"
-                            ></el-input-number>
-                          </div>
-                        </div>
-                        <div v-else class="model-disabled-notice">
-                          启用模型以配置参数
-                        </div>
-                      </template>
-                    </el-table-column>
-                    <el-table-column label="描述" min-width="300">
-                      <template #default="scope">
-                        <span class="model-description">{{ scope.row.description || '无描述' }}</span>
-                      </template>
-                    </el-table-column>
-                  </el-table>
-                </div>
+      <!-- 右侧内容区域 -->
+      <div class="settings-content">
+        <div v-for="provider in aiProviders" 
+             :key="provider.providerId" 
+             v-show="activeTab === provider.providerId"
+             class="provider-settings"
+        >
+          <!-- API设置卡片 -->
+          <div class="settings-card api-settings">
+            <div class="card-header">
+              <h3>{{ provider.name }} API 设置</h3>
+              <p class="card-description">配置您的API密钥和服务端点以使用{{ provider.name }}的AI模型</p>
+            </div>
+            
+            <div class="card-content">
+              <el-form :model="providerSettings[provider.providerId]" label-position="top">
+                <el-form-item label="API 密钥">
+                  <div class="api-key-input">
+                    <el-input 
+                      v-model="providerSettings[provider.providerId].apiKey" 
+                      placeholder="输入您的API密钥"
+                      :type="passwordVisible[provider.providerId] ? 'text' : 'password'"
+                    />
+                    <el-button 
+                      @click="togglePasswordVisibility(provider.providerId)" 
+                      class="visibility-toggle"
+                    >
+                      {{ passwordVisible[provider.providerId] ? '隐藏' : '显示' }}
+                    </el-button>
+                  </div>
+                </el-form-item>
                 
-                <!-- 图像模型部分 -->
-                <div class="model-type-section" v-if="getProviderImageModels(provider.providerId).length > 0">
-                  <h4>图像模型</h4>
-                  <el-table :data="getProviderImageModels(provider.providerId)" style="width: 100%" :fit="false" :row-class-name="getRowClassName">
-                    <el-table-column label="模型" min-width="180" width="180">
-                      <template #default="scope">
-                        <div class="model-name">
-                          <span>{{ scope.row.name }}</span>
-                          <el-tag size="small" v-if="scope.row.isPaid" type="danger">付费</el-tag>
-                        </div>
-                      </template>
-                    </el-table-column>
-                    <el-table-column label="启用" width="60" align="center">
-                      <template #default="scope">
-                        <el-checkbox 
-                          v-model="providerSettings[provider.providerId].enabledModels[scope.row.modelId]"
-                        ></el-checkbox>
-                      </template>
-                    </el-table-column>
-                    <el-table-column label="默认" width="100" align="center">
-                      <template #default="scope">
-                        <el-radio
-                          v-model="imageDefaultModel"
-                          :label="scope.row.modelId"
-                          @change="handleImageModelSelection(scope.row.modelId)"
-                          :disabled="!providerSettings[provider.providerId].enabledModels[scope.row.modelId]"
-                        ></el-radio>
-                      </template>
-                    </el-table-column>
-                    <el-table-column label="描述" min-width="400">
-                      <template #default="scope">
-                        <span class="model-description">{{ scope.row.description || '无描述' }}</span>
-                      </template>
-                    </el-table-column>
-                  </el-table>
+                <el-form-item label="API 端点" v-if="provider.hasEndpoint">
+                  <el-input 
+                    v-model="providerSettings[provider.providerId].endpoint" 
+                    placeholder="输入API端点URL"
+                  />
+                </el-form-item>
+
+                <div class="form-actions">
+                  <el-button type="primary" @click="saveSettings" :loading="isSubmitting">
+                    保存设置
+                  </el-button>
+                  <el-button @click="testModelConnection(provider.providerId)" :loading="isSubmitting">
+                    测试连接
+                  </el-button>
+                </div>
+              </el-form>
+            </div>
+          </div>
+
+          <!-- 模型选择与配置卡片 -->
+          <div class="settings-card models-settings">
+            <div class="card-header">
+              <h3>模型管理</h3>
+              <p class="card-description">启用或禁用模型，设置默认模型和调整参数</p>
+            </div>
+            
+            <div class="card-content">
+              <!-- 模型类型选择器 -->
+              <div class="model-tabs">
+                <el-radio-group v-model="modelTypeFilter" size="large" button-style="solid">
+                  <el-radio-button label="text">文本模型</el-radio-button>
+                  <el-radio-button label="image" v-if="getProviderImageModels(provider.providerId).length > 0">图像模型</el-radio-button>
+                </el-radio-group>
+              </div>
+              
+              <!-- 文本模型列表 -->
+              <div v-if="modelTypeFilter === 'text'" class="model-list text-models">
+                <div 
+                  v-for="model in getProviderTextModels(provider.providerId)" 
+                  :key="model.modelId" 
+                  class="model-card"
+                  :class="{ 'selected': defaultModel === model.modelId, 'disabled': !providerSettings[provider.providerId].enabledModels[model.modelId] }"
+                >
+                  <div class="model-header">
+                    <div class="model-name-section">
+                      <h4 class="model-name">{{ model.name }}</h4>
+                      <el-tag size="small" v-if="model.isPaid" type="danger">付费</el-tag>
+                    </div>
+                    <el-switch 
+                      v-model="providerSettings[provider.providerId].enabledModels[model.modelId]"
+                      inline-prompt
+                      active-text="启用"
+                      inactive-text="禁用"
+                    />
+                  </div>
+                  
+                  <div class="model-description">
+                    {{ model.description || '无描述' }}
+                  </div>
+                  
+                  <div v-if="providerSettings[provider.providerId].enabledModels[model.modelId]" class="model-settings">
+                    <div class="param-item">
+                      <div class="param-header">
+                        <span class="param-label">温度：</span>
+                        <span class="param-value">{{ providerSettings[provider.providerId].modelParams[model.modelId].temperature }}</span>
+                      </div>
+                      <el-slider 
+                        v-model="providerSettings[provider.providerId].modelParams[model.modelId].temperature" 
+                        :min="0" 
+                        :max="1" 
+                        :step="0.1"
+                        show-stops
+                      />
+                    </div>
+                    <div class="param-item">
+                      <div class="param-header">
+                        <span class="param-label">最大输出长度：</span>
+                      </div>
+                      <el-input-number 
+                        v-model="providerSettings[provider.providerId].modelParams[model.modelId].maxTokens" 
+                        :min="100" 
+                        :max="8000"
+                        :step="100"
+                        size="small"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div class="model-actions">
+                    <el-button 
+                      type="primary" 
+                      :disabled="!providerSettings[provider.providerId].enabledModels[model.modelId]"
+                      @click="handleModelSelection(model.modelId)"
+                      :class="{ 'is-default': defaultModel === model.modelId }"
+                    >
+                      {{ defaultModel === model.modelId ? '当前默认' : '设为默认' }}
+                    </el-button>
+                  </div>
                 </div>
               </div>
-            </el-form>
+              
+              <!-- 图像模型列表 -->
+              <div v-if="modelTypeFilter === 'image'" class="model-list image-models">
+                <div 
+                  v-for="model in getProviderImageModels(provider.providerId)" 
+                  :key="model.modelId" 
+                  class="model-card"
+                  :class="{ 'selected': imageDefaultModel === model.modelId, 'disabled': !providerSettings[provider.providerId].enabledModels[model.modelId] }"
+                >
+                  <div class="model-header">
+                    <div class="model-name-section">
+                      <h4 class="model-name">{{ model.name }}</h4>
+                      <el-tag size="small" v-if="model.isPaid" type="danger">付费</el-tag>
+                    </div>
+                    <el-switch 
+                      v-model="providerSettings[provider.providerId].enabledModels[model.modelId]"
+                      inline-prompt
+                      active-text="启用"
+                      inactive-text="禁用"
+                    />
+                  </div>
+                  
+                  <div class="model-description">
+                    {{ model.description || '无描述' }}
+                  </div>
+                  
+                  <div class="model-actions">
+                    <el-button 
+                      type="primary" 
+                      :disabled="!providerSettings[provider.providerId].enabledModels[model.modelId]"
+                      @click="handleImageModelSelection(model.modelId)"
+                      :class="{ 'is-default': imageDefaultModel === model.modelId }"
+                    >
+                      {{ imageDefaultModel === model.modelId ? '当前默认' : '设为默认' }}
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-        </el-tab-pane>
-      </el-tabs>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -196,9 +227,10 @@ const activeTab = ref('openai')
 const isLoading = ref(false)
 const isSubmitting = ref(false)
 const settingsLoaded = ref(false)
-const apiKeyVisibility = ref({})
+const passwordVisible = reactive({})
 const defaultModel = ref('')
 const imageDefaultModel = ref('')
+const modelTypeFilter = ref('text')
 
 // 提供商数据
 const aiProviders = ref([])
@@ -379,9 +411,9 @@ const loadProvidersAndModels = async () => {
         };
       }
       
-      // 初始化API密钥可见性
-      if (apiKeyVisibility[provider.providerId] === undefined) {
-        apiKeyVisibility[provider.providerId] = false;
+      // 初始化密码可见性
+      if (passwordVisible[provider.providerId] === undefined) {
+        passwordVisible[provider.providerId] = false;
       }
     });
     
@@ -520,9 +552,12 @@ const loadUserSettings = async () => {
   }
 }
 
-// 切换API密钥可见性
-const toggleApiKeyVisibility = (providerId) => {
-  apiKeyVisibility[providerId] = !apiKeyVisibility[providerId]
+// 切换密码可见性
+const togglePasswordVisibility = (providerId) => {
+  console.log('Toggle password visibility for provider:', providerId)
+  // 使用双重取反确保是布尔值
+  passwordVisible[providerId] = !!(passwordVisible[providerId]) ? false : true
+  console.log('New visibility state:', passwordVisible[providerId])
 }
 
 // 测试连接
@@ -718,8 +753,9 @@ onMounted(async () => {
   padding: 32px;
   max-width: 1200px;
   margin: 0 auto;
-  background-color: #f5f7fa;
-  min-height: 100vh;
+  background-color: #f8fafc;
+  min-height: calc(100vh - 64px);
+  color: #1e293b;
 }
 
 .settings-header {
@@ -730,7 +766,7 @@ onMounted(async () => {
     font-size: 28px;
     font-weight: 600;
     margin-bottom: 16px;
-    background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+    background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     letter-spacing: 0.5px;
@@ -743,205 +779,362 @@ onMounted(async () => {
   }
 }
 
-.settings-tabs {
-  background: white;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-  border: 1px solid #e2e8f0;
-  min-height: 600px;
-  
-  :deep(.el-tabs__header) {
-    margin-right: 0;
-    background-color: #f8fafc;
-    border-right: 1px solid #e2e8f0;
-    width: 200px;
-  }
-  
-  :deep(.el-tabs__item) {
-    height: 56px;
-    line-height: 56px;
-    text-align: left;
-    padding: 0 24px;
-    font-size: 15px;
-    color: #64748b;
-    transition: all 0.3s ease;
-    
-    &:hover {
-      color: #8b5cf6;
-      background-color: rgba(139, 92, 246, 0.04);
-    }
-    
-    &.is-active {
-      background-color: rgba(139, 92, 246, 0.08);
-      color: #8b5cf6;
-      font-weight: 500;
-      border-right: 3px solid #8b5cf6;
-    }
-  }
-  
-  :deep(.el-tabs__content) {
-    padding: 24px;
-    background-color: #ffffff;
-    overflow-x: auto;
-  }
-}
-
-.provider-settings {
-  min-width: 800px;
-
-  h3 {
-    font-size: 22px;
-    font-weight: 600;
-    margin-bottom: 24px;
-    color: #1e293b;
-    position: relative;
-    padding-bottom: 12px;
-    
-    &::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 48px;
-      height: 3px;
-      background: linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%);
-      border-radius: 2px;
-    }
-  }
-}
-
-.unified-models-list, .all-models-view {
-  margin-top: 20px;
-  width: 100%;
-  
-  .model-type-section {
-    margin-bottom: 30px;
-    
-    h4 {
-      margin-bottom: 15px;
-      font-size: 16px;
-      font-weight: 600;
-      color: #409EFF;
-    }
-  }
-  
-  .model-name {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  
-  :deep(.selected-row) {
-    background-color: #f0f9ff;
-  }
-}
-
-.api-key-input {
-  display: flex;
-  align-items: center;
-  
-  .el-input {
-    flex-grow: 1;
-  }
-  
-  .el-button {
-    margin-left: 10px;
-  }
-}
-
-.api-actions {
-  display: flex;
-  gap: 10px;
-  margin: 20px 0;
-}
-
-.model-params {
-  padding: 12px;
-  background-color: #f8f9fa;
-  border-radius: 6px;
-  
-  .param-item {
-    display: flex;
-    align-items: center;
-    margin-bottom: 12px;
-    
-    &:last-child {
-      margin-bottom: 0;
-    }
-    
-    .param-label {
-      min-width: 110px;
-      color: #5c6b77;
-      font-size: 14px;
-    }
-    
-    .param-value {
-      margin-left: 10px;
-      color: #1f2937;
-      font-weight: 500;
-      min-width: 30px;
-    }
-    
-    .el-slider {
-      flex: 1;
-      min-width: 150px;
-    }
-  }
-}
-
-.model-disabled-notice {
-  color: #909399;
-  font-size: 13px;
-  font-style: italic;
-  padding: 8px 0;
-}
-
-.model-description {
-  display: block;
-  word-break: break-word;
-  white-space: normal;
-  line-height: 1.5;
-  color: #475569;
-  font-size: 14px;
-  max-width: 380px;
-  padding-right: 10px;
-}
-
-.el-radio {
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  height: auto;
-  padding: 0;
-  margin-right: 0;
-  
-  :deep(.el-radio__input) {
-    white-space: nowrap;
-  }
-  
-  :deep(.el-radio__label) {
-    display: none;
-  }
-}
-
-.debug-info {
-  margin-top: 8px;
-  padding: 6px 10px;
-  background-color: #f0f9ff;
-  border-radius: 4px;
-  font-size: 12px;
-  color: #0369a1;
-  font-family: monospace;
-}
-
 .loading-container {
   padding: 32px;
   background: white;
   border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
   border: 1px solid #e2e8f0;
   margin-bottom: 24px;
+}
+
+.settings-main {
+  display: flex;
+  gap: 24px;
+  min-height: 700px;
+  
+  .provider-list {
+    width: 220px;
+    flex-shrink: 0;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    border: 1px solid #e2e8f0;
+    
+    .list-title {
+      padding: 20px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #0f172a;
+      border-bottom: 1px solid #e2e8f0;
+      margin: 0;
+    }
+    
+    .provider-menu {
+      list-style-type: none;
+      padding: 0;
+      margin: 0;
+      
+      li {
+        display: flex;
+        align-items: center;
+        padding: 16px 20px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        gap: 12px;
+        color: #64748b;
+        
+        &:hover {
+          background-color: #f8fafc;
+          color: #0f172a;
+        }
+        
+        &.active {
+          background-color: #f1f5f9;
+          color: #0f172a;
+          position: relative;
+          font-weight: 500;
+          
+          &::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 60%;
+            width: 3px;
+            background: #0f172a;
+            border-radius: 2px 0 0 2px;
+          }
+        }
+        
+        .provider-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 8px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          font-weight: 600;
+          color: white;
+          
+          &.openai {
+            background: linear-gradient(135deg, #10a37f, #0a8a6c);
+          }
+          
+          &.anthropic {
+            background: linear-gradient(135deg, #b73999, #8f2d79);
+          }
+          
+          &.google {
+            background: linear-gradient(135deg, #4285f4, #34a853);
+          }
+          
+          &.deepseek {
+            background: linear-gradient(135deg, #ff5c35, #d64c2d);
+          }
+          
+          &.custom {
+            background: linear-gradient(135deg, #334155, #1e293b);
+          }
+        }
+        
+        .provider-name {
+          font-size: 15px;
+        }
+      }
+    }
+  }
+  
+  .settings-content {
+    flex: 1;
+    overflow: hidden;
+    min-width: 0;
+    
+    .provider-settings {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+  }
+}
+
+.settings-card {
+  background: white;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  
+  .card-header {
+    padding: 24px 28px;
+    border-bottom: 1px solid #e2e8f0;
+    background-color: #fafafa;
+    
+    h3 {
+      margin: 0 0 8px 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    
+    .card-description {
+      margin: 0;
+      color: #64748b;
+      font-size: 14px;
+    }
+  }
+  
+  .card-content {
+    padding: 28px;
+  }
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.api-key-input {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  
+  .el-input {
+    flex-grow: 1;
+    
+    :deep(.el-input__wrapper) {
+      border-radius: 8px;
+    }
+  }
+  
+  .visibility-toggle {
+    min-width: 70px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+    
+    &:hover {
+      color: #0f172a;
+      border-color: #94a3b8;
+      background-color: #f1f5f9;
+    }
+    
+    &:active {
+      background-color: #e2e8f0;
+    }
+  }
+}
+
+.model-tabs {
+  margin-bottom: 28px;
+  
+  :deep(.el-radio-group) {
+    display: flex;
+    width: 100%;
+    
+    .el-radio-button {
+      flex: 1;
+      
+      &:first-child {
+        .el-radio-button__inner {
+          border-radius: 8px 0 0 8px;
+        }
+      }
+      
+      &:last-child {
+        .el-radio-button__inner {
+          border-radius: 0 8px 8px 0;
+        }
+      }
+      
+      .el-radio-button__inner {
+        width: 100%;
+        padding: 12px 20px;
+        border-color: #e2e8f0;
+        color: #64748b;
+        font-size: 15px;
+        transition: all 0.2s ease;
+        
+        &:hover {
+          color: #0f172a;
+        }
+      }
+      
+      &.is-active {
+        .el-radio-button__inner {
+          background: #0f172a;
+          color: white;
+          border-color: #0f172a;
+          box-shadow: 0 0 0 1px #0f172a;
+        }
+      }
+    }
+  }
+}
+
+.model-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.model-card {
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  }
+  
+  &.selected {
+    border-color: #0f172a;
+    box-shadow: 0 0 0 1px #0f172a, 0 10px 30px rgba(15, 23, 42, 0.1);
+    background-color: #f8fafc;
+    
+    .model-name {
+      color: #0f172a;
+    }
+  }
+  
+  &.disabled {
+    opacity: 0.6;
+    
+    .model-description {
+      color: #94a3b8;
+    }
+  }
+  
+  .model-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .model-name-section {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      
+      .model-name {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #1e293b;
+      }
+    }
+  }
+  
+  .model-description {
+    color: #64748b;
+    font-size: 14px;
+    line-height: 1.5;
+    min-height: 42px;
+  }
+  
+  .model-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    
+    .param-item {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      
+      .param-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        
+        .param-label {
+          color: #64748b;
+          font-size: 14px;
+        }
+        
+        .param-value {
+          font-weight: 600;
+          color: #1e293b;
+        }
+      }
+    }
+  }
+  
+  .model-actions {
+    margin-top: auto;
+    
+    .el-button {
+      width: 100%;
+      border-radius: 8px;
+      padding: 10px 0;
+      
+      &.is-default {
+        background-color: #f1f5f9;
+        color: #0f172a;
+        border-color: #cbd5e1;
+      }
+    }
+  }
 }
 
 :deep(.el-slider) {
@@ -952,7 +1145,7 @@ onMounted(async () => {
   }
   
   .el-slider__bar {
-    background: linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%);
+    background: #334155;
     border-radius: 3px;
   }
   
@@ -963,9 +1156,9 @@ onMounted(async () => {
   .el-slider__button {
     width: 16px;
     height: 16px;
-    border: 2px solid #8b5cf6;
+    border: 2px solid #334155;
     background-color: #ffffff;
-    transition: transform 0.3s ease;
+    transition: transform 0.2s ease;
     
     &:hover {
       transform: scale(1.2);
@@ -973,7 +1166,43 @@ onMounted(async () => {
   }
   
   .el-slider__stop {
-    background-color: #e2e8f0;
+    background-color: #cbd5e1;
+  }
+}
+
+:deep(.el-switch) {
+  &.is-checked {
+    .el-switch__core {
+      background-color: #334155;
+      border-color: #1e293b;
+    }
+  }
+  
+  .el-switch__core {
+    border-color: #cbd5e1;
+  }
+}
+
+:deep(.el-button--primary) {
+  background: #0f172a;
+  border: none;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.16);
+  
+  &:hover:not(:disabled) {
+    background: #1e293b;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.2);
+  }
+  
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  }
+  
+  &:disabled {
+    background: #cbd5e1;
+    opacity: 0.7;
+    box-shadow: none;
   }
 }
 
@@ -983,64 +1212,54 @@ onMounted(async () => {
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     padding: 0 12px;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     box-shadow: none;
     
     &:hover {
-      border-color: #8b5cf6;
+      border-color: #94a3b8;
     }
     
     &.is-focus {
-      border-color: #8b5cf6;
-      box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+      border-color: #334155;
+      box-shadow: 0 0 0 3px rgba(51, 65, 85, 0.1);
     }
     
     .el-input__inner {
       color: #1e293b;
-      height: 40px;
-      line-height: 40px;
-      font-size: 14px;
     }
   }
   
-  .el-input-number__decrease,
+  .el-input-number__decrease, 
   .el-input-number__increase {
-    border-color: #e2e8f0;
     color: #64748b;
     
     &:hover {
-      color: #8b5cf6;
+      color: #0f172a;
     }
-  }
-}
-
-.visibility-toggle {
-  padding: 4px 8px;
-  margin-left: 8px;
-  
-  &:hover {
-    background-color: var(--el-fill-color-light);
   }
 }
 
 @media (max-width: 1024px) {
-  .ai-settings-container {
-    padding: 20px;
-  }
-  
-  .settings-tabs {
-    :deep(.el-tabs__header) {
-      width: 160px;
-    }
+  .settings-main {
+    flex-direction: column;
     
-    :deep(.el-tabs__item) {
-      padding: 0 16px;
-      font-size: 14px;
+    .provider-list {
+      width: 100%;
+      
+      .provider-menu {
+        display: flex;
+        flex-wrap: wrap;
+        
+        li {
+          flex: 1;
+          min-width: 120px;
+        }
+      }
     }
   }
   
-  .provider-settings {
-    min-width: 600px;
+  .model-list {
+    grid-template-columns: 1fr;
   }
 }
 </style> 

@@ -52,9 +52,19 @@
                 <el-icon><Document /></el-icon>
                 草稿箱
               </el-dropdown-item>
-              <el-dropdown-item @click="$router.push('/ai/chat')">
+              <el-dropdown-item 
+                v-if="userStore.user?.role !== 'user'"
+                @click="$router.push('/ai')"
+              >
                 <el-icon><DataLine /></el-icon>
-                AI工具箱
+                AI助手
+              </el-dropdown-item>
+              <el-dropdown-item 
+                v-if="userStore.user?.role !== 'user'"
+                @click="$router.push('/ai/settings')"
+              >
+                <el-icon><Setting /></el-icon>
+                AI设置
               </el-dropdown-item>
               <el-dropdown-item @click="$router.push('/settings')">
                 <el-icon><Setting /></el-icon>
