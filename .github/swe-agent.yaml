@@ -1,20 +1,63 @@
-# .github/swe-agent.yaml
+# SWE-agent minimal standalone configuration
+# 不依赖内置 default.yaml，可单独使用
+# 放在仓库 .github/ 下即可
+
 agent:
   model:
-    # 官方模型名举例：根据你账号可用的实际名称填写
-    # 例如：claude-3-7-sonnet-20250219  或 claude-3-5-sonnet-latest
-    name: "claude-3-7-sonnet-latest"
-    # 原生 Anthropic 不需要 api_base（走默认），只要 ANTHROPIC_API_KEY 存在
-    # 如果你必须走代理但仍是“Anthropic 原生协议”，这里可填你的代理 base
-    # api_base: "https://api.anthropic.com"
+    # 如果用 Anthropic 官方 API，请用下行：
+#    name: "claude-3-7-sonnet-20250219"
+    # 如果用 OpenAI 兼容网关，请改为你网关要求的模型名（如 "claude-3-7-sonnet"）
+    name: "claude-4-5-sonnet"
+    # 对应 API base，如你的代理为 https://claude.nnppn.cn：
+    # api_base: "https://claude.nnppn.cn"
+    # 指定使用哪个环境变量读取 key（可选）
+    api_key_env: "https://claude.nnppn.cn/api"
 
-  # （可选）成本/安全护栏
-  cost_limits:
-    per_instance_usd: 3.0
+  # 成本和采样控制
   sampling:
     temperature: 0.2
+    max_tokens: 4096
 
-# 限制危险操作等（按需）
+  cost_limits:
+    per_instance_usd: 3.0
+
+# ========== 环境配置 ==========
+env:
+  repo:
+    type: local
+    path: "."
+  run:
+    work_dir: /tmp/sweagent-run
+    timeout_seconds: 1800
+
+# ========== 工具配置 ==========
+tools:
+  # 允许 agent 使用哪些工具
+  enabled_tools:
+    - bash
+    - python
+    - git
+  bash:
+    timeout: 30
+  python:
+    timeout: 30
+
+# ========== 输出与日志 ==========
+output:
+  verbose: true
+  save_logs: true
+  log_dir: /tmp/sweagent-logs
+  patch_dir: /tmp/sweagent-patches
+
+# ========== 提交与安全策略 ==========
+repo:
+  base_branch: main
+  create_pr: false    # 由 Action 创建 PR，不在这里自动创建
+  commit_message_template: |
+    [SWE-Agent] Auto fix for {{ issue_title }}
+
+# 限制执行范围
 safety:
-  allow_shell: false
   allow_network: true
+  allow_shell: false
+  allow_git_push: false
