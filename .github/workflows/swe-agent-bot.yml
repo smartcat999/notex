@@ -38,11 +38,6 @@ jobs:
           cd /tmp/swe-agent
           pip install -e .
       
-      - name: Check SWE-agent CLI arguments
-        run: |
-          cd /tmp/swe-agent
-          sweagent run --help || echo "Help command failed, trying without --help"
-      
       - name: Run SWE-agent
         env:
           GITHUB_TOKEN: ${{ secrets.SWE_AGENT_GH_TOKEN }}
@@ -53,8 +48,6 @@ jobs:
           cd /tmp/swe-agent
           sweagent run \
             --config ${{ github.workspace }}/.github/swe-agent.yaml \
-            --repo https://github.com/${{ github.repository }}.git \
-            --problem "${{ github.event.issue.title }}
-
-          ${{ github.event.issue.body }}"
+            --env.repo.github_url https://github.com/${{ github.repository }}.git \
+            --problem_statement.github_url https://github.com/${{ github.repository }}/issues/${{ github.event.issue.number }}
 
