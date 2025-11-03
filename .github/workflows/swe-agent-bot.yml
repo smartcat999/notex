@@ -31,10 +31,12 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git curl
       
-      - name: Install SWE-agent
+      - name: Clone and Install SWE-agent
         run: |
           python -m pip install --upgrade pip
-          pip install "git+https://github.com/SWE-agent/SWE-agent.git"
+          git clone --depth 1 https://github.com/SWE-agent/SWE-agent.git /tmp/swe-agent
+          cd /tmp/swe-agent
+          pip install -e .
       
       - name: Run SWE-agent
         env:
@@ -43,8 +45,9 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           TOGETHER_API_KEY: ${{ secrets.TOGETHER_API_KEY }}
         run: |
+          cd /tmp/swe-agent
           sweagent run \
-            --config .github/swe-agent.yaml \
+            --config ${{ github.workspace }}/.github/swe-agent.yaml \
             --repo.url https://github.com/${{ github.repository }}.git \
             --problem.statement "${{ github.event.issue.title }}
 
