@@ -1,14 +1,20 @@
-# SWE-agent Configuration Override
-# Based on: https://github.com/SWE-agent/SWE-agent/blob/main/config/demo/default.yaml
-# This file overrides only the model configuration
-
+# .github/swe-agent.yaml
 agent:
   model:
-    # 尝试不同的模型名称格式
-    name: "anthropic/claude-sonnet-4-5"  # 或尝试 "claude-sonnet-4-5" 
-    # API base - litellm 会自动添加 /v1，所以这里不应该包含 /v1
-    api_base: "https://claude.nnppn.cn/api"
-    # 如果上面的不行，可以尝试：
-    # api_base: "https://claude.nnppn.cn"
-    # 或者检查代理服务器期望的格式
+    # 官方模型名举例：根据你账号可用的实际名称填写
+    # 例如：claude-3-7-sonnet-20250219  或 claude-3-5-sonnet-latest
+    name: "claude-3-7-sonnet-latest"
+    # 原生 Anthropic 不需要 api_base（走默认），只要 ANTHROPIC_API_KEY 存在
+    # 如果你必须走代理但仍是“Anthropic 原生协议”，这里可填你的代理 base
+    # api_base: "https://api.anthropic.com"
 
+  # （可选）成本/安全护栏
+  cost_limits:
+    per_instance_usd: 3.0
+  sampling:
+    temperature: 0.2
+
+# 限制危险操作等（按需）
+safety:
+  allow_shell: false
+  allow_network: true
