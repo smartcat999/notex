@@ -11,3 +11,7 @@ tmp
 .env.test.local
 .env.production.local
 uploads
+
+# SWE-agent
+.swe-agent-trajectories
+.swe-agent-tmp
