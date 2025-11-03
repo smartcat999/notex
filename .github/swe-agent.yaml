@@ -7,4 +7,6 @@ agent:
   model:
     name: "anthropic/claude-sonnet-4.5"
     api_base: "https://claude.nnppn.cn/api"
+    parse_function: "thought_action"
+    max_input_token: 200000
 

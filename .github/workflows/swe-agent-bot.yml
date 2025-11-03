@@ -49,10 +49,6 @@ jobs:
           sweagent run \
             --config config/default.yaml \
             --config ${{ github.workspace }}/.github/swe-agent.yaml \
-            --agent.model.name="anthropic/claude-sonnet-4.5" \
-            --agent.model.api_base="https://claude.nnppn.cn/api" \
-            --agent.model.parse_function="thought_action" \
-            --agent.model.max_input_token=200000 \
             --env.repo.github_url=https://github.com/${{ github.repository }}.git \
             --problem_statement.github_url=https://github.com/${{ github.repository }}/issues/${{ github.event.issue.number }}
 
