@@ -1,12 +1,10 @@
-# SWE-agent Configuration
-# Minimal override configuration - uses default config from SWE-agent
-# Only override necessary settings
+# SWE-agent Configuration Override
+# Based on: https://github.com/SWE-agent/SWE-agent/blob/main/config/demo/default.yaml
+# This file overrides only the model configuration
 
-# Model configuration
 agent:
   model:
     name: "anthropic/claude-sonnet-4.5"
     api_base: "https://claude.nnppn.cn/api"
-    parse_function: "thought_action"
-    max_input_token: 200000
+    # Note: parse_function and max_input_token will be auto-detected/handled by SWE-agent
 
