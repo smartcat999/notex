@@ -4,7 +4,11 @@
 
 agent:
   model:
-    name: "anthropic/claude-sonnet-4.5"
+    # 尝试不同的模型名称格式
+    name: "anthropic/claude-sonnet-4-5"  # 或尝试 "claude-sonnet-4-5" 
+    # API base - litellm 会自动添加 /v1，所以这里不应该包含 /v1
     api_base: "https://claude.nnppn.cn/api"
-    # Note: parse_function and max_input_token will be auto-detected/handled by SWE-agent
+    # 如果上面的不行，可以尝试：
+    # api_base: "https://claude.nnppn.cn"
+    # 或者检查代理服务器期望的格式
 
