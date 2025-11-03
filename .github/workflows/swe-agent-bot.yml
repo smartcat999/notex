@@ -82,12 +82,12 @@ jobs:
           assignees: ${{ github.actor }}
           draft: false
 
-      - name: Comment on issue with PR link
+      - name: Comment on issue with PR link (via gh)
         if: steps.cpr.outputs.pull-request-number != ''
-        uses: actions-ecosystem/action-add-comment@v2
-        with:
-          github_token: ${{ secrets.SWE_AGENT_GH_TOKEN }}
-          issue_number: ${{ github.event.issue.number }}
-          comment: |
-            ✅ Created PR #${{ steps.cpr.outputs.pull-request-number }} from branch `${{ env.SWE_BRANCH }}`.
-            Thanks for the label `bot:fix` — review the changes when you have a moment.
+        env:
+          GH_TOKEN: ${{ secrets.SWE_AGENT_GH_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number }} \
+            --body "✅ Created PR #${{ steps.cpr.outputs.pull-request-number }} from branch \`${{ env.SWE_BRANCH }}\`.
+
+            Thanks for the label \`bot:fix\` — review the changes when you have a moment."
