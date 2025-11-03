@@ -5,6 +5,6 @@
 # Model configuration
 agent:
   model:
-    name: "claude-sonnet-4.5"
+    name: "anthropic/claude-sonnet-4.5"
     api_base: "https://claude.nnppn.cn/api"
 
