@@ -38,15 +38,19 @@ jobs:
       - name: Install SWE-agent
         run: |
           python -m pip install --upgrade pip
-          # 也可以固定 commit，避免上游变动影响
-          pip install "git+https://github.com/SWE-agent/SWE-agent.git"
+          # 需要克隆完整仓库以包含 config 目录
+          git clone --depth 1 https://github.com/SWE-agent/SWE-agent.git /tmp/swe-agent
+          cd /tmp/swe-agent
+          pip install -e .
+          # 确保 config 目录存在
+          ls -la config/ || echo "Warning: config directory not found"
 
       - name: Configure git identity for PR commits
         run: |
           git config user.name "swe-agent-bot"
           git config user.email "swe-agent-bot@users.noreply.github.com"
 
-      # 关键：让 SWE-agent 修改“当前工作区”的代码
+       # 关键：让 SWE-agent 修改"当前工作区"的代码
       - name: Run SWE-agent (edit local workspace)
         env:
           GITHUB_TOKEN: ${{ secrets.SWE_AGENT_GH_TOKEN }}
@@ -55,11 +59,13 @@ jobs:
           # 二选一：如果你走 OpenAI 兼容代理(例如 LiteLLM/OpenRouter/自建网关)，可用 OPENAI_API_KEY
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
-          sweagent run \
-            --config ${{ github.workspace }}/.github/swe-agent.yaml \
-            --env.repo.type=local \
-            --env.repo.path=${{ github.workspace }} \
-            --problem_statement.github_url=https://github.com/${{ github.repository }}/issues/${{ github.event.issue.number }}
+           cd /tmp/swe-agent
+           sweagent run \
+             --config config/default.yaml \
+             --config ${{ github.workspace }}/.github/swe-agent.yaml \
+             --env.repo.type=local \
+             --env.repo.path=${{ github.workspace }} \
+             --problem_statement.github_url=https://github.com/${{ github.repository }}/issues/${{ github.event.issue.number }}
 
       - name: Create pull request if changes exist
         id: cpr
