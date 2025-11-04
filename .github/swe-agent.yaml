@@ -7,8 +7,8 @@ agent:
     name: "anthropic/claude-sonnet-4-5"
     api_base: "https://claude.nnppn.cn/api"
     # max_tokens: 4096
-  # task:
-  #   max_iterations: 30
+  task:
+    max_iterations: 30
 
 # Note: Other settings like cost_limits, max_iterations, tools, etc.
 # should be set via command line arguments or use default config
