@@ -9,9 +9,9 @@ agent:
     per_instance_cost_limit: 0
     per_instance_call_limit: 20
     # max_tokens: 4096
-  history_processors：
+  history_processors:
     - type: last_n_observations
-      n: 5
+      n:5
     - type: cache_control
       last_n_messages: 2
 
