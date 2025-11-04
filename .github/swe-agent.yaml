@@ -6,3 +6,8 @@ agent:
   model:
     name: "anthropic/claude-sonnet-4-5"
     api_base: "https://claude.nnppn.cn/api"
+actions:
+  open_pr: true
+  pr_config:
+    base: main
+    branch_prefix: swe-agent/
