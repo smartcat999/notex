@@ -9,11 +9,11 @@ agent:
     per_instance_cost_limit: 2
 #    per_instance_call_limit: 20
     # max_tokens: 4096
-  history_processors:
-    - type: last_n_observations
-      n: 5
-    - type: cache_control
-      last_n_messages: 2
+  # history_processors:
+  #   - type: last_n_observations
+  #     n: 5
+  #   - type: cache_control
+  #     last_n_messages: 2
 
 # Note: Other settings like cost_limits, max_iterations, tools, etc.
 # should be set via command line arguments or use default config
