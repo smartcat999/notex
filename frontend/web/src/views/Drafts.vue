@@ -392,19 +392,23 @@ onMounted(() => {
         width: 400px;
         
         :deep(.el-input__wrapper) {
-          border-radius: 24px;
-          padding: 8px 16px;
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-          transition: all 0.3s ease;
+          border-radius: 16px;
+          padding: 10px 18px;
+          box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           background: rgba(255, 255, 255, 0.98);
+          border: 1px solid rgba(43, 88, 118, 0.08);
           
           &:hover {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            border-color: rgba(43, 88, 118, 0.12);
+            background: rgba(255, 255, 255, 1);
           }
           
           &.is-focus {
-            box-shadow: 0 4px 16px rgba(43, 88, 118, 0.15);
-            border-color: rgba(43, 88, 118, 0.3);
+            box-shadow: 0 4px 20px rgba(43, 88, 118, 0.12);
+            border-color: rgba(43, 88, 118, 0.25);
+            background: rgba(255, 255, 255, 1);
           }
         }
         
