@@ -11,7 +11,7 @@ agent:
     # max_tokens: 4096
   history_processors:
     - type: last_n_observations
-      n:5
+      n: 5
     - type: cache_control
       last_n_messages: 2
 
