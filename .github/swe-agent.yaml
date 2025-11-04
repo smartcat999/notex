@@ -7,6 +7,11 @@ agent:
     name: "anthropic/claude-sonnet-4-5"
     api_base: "https://claude.nnppn.cn/api"
     # max_tokens: 4096
+  # history_processors：
+  #   - type: last_n_observations
+  #     n: 5
+  #   - type: cache_control
+  #     last_n_messages: 2
 
 # Note: Other settings like cost_limits, max_iterations, tools, etc.
 # should be set via command line arguments or use default config
