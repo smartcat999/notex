@@ -11,3 +11,12 @@ actions:
   pr_config:
     base: main
     branch_prefix: swe-agent/
+env:
+  # repo:
+    # github_url: https://github.com/SWE-agent/test-repo
+  deployment:
+    # image: tiny
+    python_standalone_dir: ""
+# problem_statement:
+#   github_url:
+#     https://github.com/SWE-agent/test-repo/issues/1
