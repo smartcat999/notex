@@ -6,17 +6,39 @@ agent:
   model:
     name: "anthropic/claude-sonnet-4-5"
     api_base: "https://claude.nnppn.cn/api"
+    # 限制 token 使用，避免过度生成
+    max_tokens: 4096
+  # 成本和迭代限制
+  cost_limits:
+    per_instance_usd: 2.00
+  # 任务限制 - 限制最大迭代次数，避免过度探索
+  task:
+    max_iterations: 30
+
+# 工具配置 - 限制可用工具，只启用必要的工具
+tools:
+  enabled:
+    - file_editor
+    - search_replace
+    - grep
+    - read_file
+  # 禁用 shell 和 search，避免过度探索
+  disabled:
+    - shell
+    - search
+
+# 输出限制
+output:
+  # 限制日志输出
+  verbose: false
+  save_trajectory: true
+
 actions:
   open_pr: true
   pr_config:
     base: main
     branch_prefix: swe-agent/
+
 env:
-  # repo:
-    # github_url: https://github.com/SWE-agent/test-repo
   deployment:
-    # image: tiny
     python_standalone_dir: ""
-# problem_statement:
-#   github_url:
-#     https://github.com/SWE-agent/test-repo/issues/1
