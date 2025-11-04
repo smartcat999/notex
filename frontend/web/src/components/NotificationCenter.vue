@@ -192,24 +192,30 @@ onMounted(() => {
       .el-radio-button {
         &:first-child {
           .el-radio-button__inner {
-            border-radius: 4px 0 0 4px;
+            border-radius: 6px 0 0 6px;
           }
         }
         
         &:last-child {
           .el-radio-button__inner {
-            border-radius: 0 4px 4px 0;
+            border-radius: 0 6px 6px 0;
           }
         }
         
         .el-radio-button__inner {
           border-color: var(--el-border-color);
           color: var(--el-text-color-regular);
-          transition: all 0.2s ease;
+          background: transparent;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          padding: 6px 12px;
+          font-size: 13px;
+          font-weight: 500;
           
           &:hover {
             color: var(--el-color-primary);
-            border-color: var(--el-color-primary-light-7);
+            border-color: var(--el-color-primary);
+            background: rgba(43, 88, 118, 0.06);
+            transform: translateY(-1px);
           }
         }
         
@@ -218,7 +224,8 @@ onMounted(() => {
             background: var(--el-color-primary);
             color: white;
             border-color: var(--el-color-primary);
-            box-shadow: none;
+            box-shadow: 0 2px 8px rgba(43, 88, 118, 0.25);
+            transform: translateY(0);
           }
         }
       }
