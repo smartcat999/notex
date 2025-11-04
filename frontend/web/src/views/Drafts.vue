@@ -6,6 +6,7 @@
         <el-input
           v-model="searchQuery"
           placeholder="搜索草稿..."
+          class="search-input"
           @input="handleSearch"
           clearable
         >
@@ -24,13 +25,22 @@
               <a :href="draft.url" target="_blank">{{ draft.title || '无标题草稿' }}</a>
             </h2>
             <div class="draft-actions">
-              <el-button type="info" plain @click="handlePreview(draft)">
+              <el-button type="info" @click="handlePreview(draft)">
                 <el-icon><View /></el-icon>
                 预览
               </el-button>
-              <el-button type="primary" @click="handleEdit(draft)">编辑</el-button>
-              <el-button type="success" @click="handlePublish(draft)">发布</el-button>
-              <el-button type="danger" @click="handleDelete(draft)">删除</el-button>
+              <el-button type="primary" @click="handleEdit(draft)">
+                <el-icon><Edit /></el-icon>
+                编辑
+              </el-button>
+              <el-button type="success" @click="handlePublish(draft)">
+                <el-icon><Upload /></el-icon>
+                发布
+              </el-button>
+              <el-button type="danger" @click="handleDelete(draft)">
+                <el-icon><Delete /></el-icon>
+                删除
+              </el-button>
             </div>
           </div>
           <div class="draft-meta">
@@ -127,7 +137,7 @@
 import { ref, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, View, Calendar, ChatDotRound } from '@element-plus/icons-vue'
+import { Search, View, Calendar, ChatDotRound, Edit, Upload, Delete } from '@element-plus/icons-vue'
 import { getDrafts, deleteDraft, publishDraft, getDraft } from '@/api/drafts'
 import { formatDate } from '@/utils/date'
 import { useUserStore } from '@/stores/user'
@@ -378,6 +388,35 @@ onMounted(() => {
       gap: 16px;
       margin-top: 24px;
 
+      .search-input {
+        width: 400px;
+        
+        :deep(.el-input__wrapper) {
+          border-radius: 24px;
+          padding: 8px 16px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+          transition: all 0.3s ease;
+          background: rgba(255, 255, 255, 0.98);
+          
+          &:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+          }
+          
+          &.is-focus {
+            box-shadow: 0 4px 16px rgba(43, 88, 118, 0.15);
+            border-color: rgba(43, 88, 118, 0.3);
+          }
+        }
+        
+        :deep(.el-input__prefix) {
+          color: #2B5876;
+        }
+        
+        :deep(.el-input__inner) {
+          font-size: 0.95em;
+        }
+      }
+
       .action-button {
         padding: 12px 24px;
         border-radius: 8px;
@@ -405,16 +444,18 @@ onMounted(() => {
   .drafts-list {
     .draft-card {
       background: rgba(255, 255, 255, 0.98);
-      border-radius: 12px;
-      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-      padding: 24px;
-      margin-bottom: 20px;
-      transition: all 0.3s ease;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+      padding: 28px;
+      margin-bottom: 24px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid rgba(43, 88, 118, 0.08);
 
       &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
         background: rgba(255, 255, 255, 1);
+        border-color: rgba(43, 88, 118, 0.15);
       }
 
       .draft-header {
@@ -443,42 +484,85 @@ onMounted(() => {
 
         .draft-actions {
           display: flex;
-          gap: 12px;
+          gap: 10px;
+          flex-wrap: wrap;
 
-          .el-button {
-            padding: 8px 16px;
+          :deep(.el-button) {
+            padding: 10px 18px;
             border: none;
-            transition: all 0.3s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 500;
-            font-size: 0.95em;
+            font-size: 0.9em;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+
+            .el-icon {
+              font-size: 1.1em;
+            }
+
+            &.el-button--info {
+              background: linear-gradient(135deg, #6c757d, #5a6268);
+              color: white;
+              box-shadow: 0 2px 8px rgba(108, 117, 125, 0.15);
+
+              &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(108, 117, 125, 0.25);
+                background: linear-gradient(135deg, #5a6268, #495057);
+              }
+
+              &:active {
+                transform: translateY(0);
+              }
+            }
 
             &.el-button--primary {
               background: linear-gradient(135deg, #2B5876, #4E4376);
               color: white;
+              box-shadow: 0 2px 8px rgba(43, 88, 118, 0.15);
 
               &:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 4px 12px rgba(43, 88, 118, 0.2);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(43, 88, 118, 0.25);
+                background: linear-gradient(135deg, #1a365d, #3d2f5f);
+              }
+
+              &:active {
+                transform: translateY(0);
               }
             }
 
             &.el-button--success {
-              background: linear-gradient(135deg, #2ecc71, #27ae60);
+              background: linear-gradient(135deg, #10b981, #059669);
               color: white;
+              box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
 
               &:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 4px 12px rgba(46, 204, 113, 0.2);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+                background: linear-gradient(135deg, #059669, #047857);
+              }
+
+              &:active {
+                transform: translateY(0);
               }
             }
 
             &.el-button--danger {
-              background: linear-gradient(135deg, #e74c3c, #c0392b);
+              background: linear-gradient(135deg, #ef4444, #dc2626);
               color: white;
+              box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
 
               &:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 4px 12px rgba(231, 76, 60, 0.2);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+                background: linear-gradient(135deg, #dc2626, #b91c1c);
+              }
+
+              &:active {
+                transform: translateY(0);
               }
             }
           }
@@ -590,30 +674,46 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-  }
+  .drafts-container {
+    .page-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 16px;
 
-  .header-actions {
-    width: 100%;
-    justify-content: flex-end;
-  }
+      .header-actions {
+        width: 100%;
+        justify-content: center;
 
-  .draft-card {
-    flex-direction: column;
-  }
+        .search-input {
+          width: 100%;
+        }
+      }
+    }
 
-  .draft-header {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-  }
+    .drafts-list {
+      .draft-card {
+        flex-direction: column;
+        padding: 20px;
 
-  .draft-actions {
-    width: 100%;
-    justify-content: flex-end;
+        .draft-header {
+          flex-direction: column;
+          align-items: stretch;
+          gap: 16px;
+
+          .draft-actions {
+            width: 100%;
+            justify-content: flex-start;
+            
+            :deep(.el-button) {
+              flex: 1;
+              min-width: 0;
+              font-size: 0.85em;
+              padding: 8px 12px;
+            }
+          }
+        }
+      }
+    }
   }
 }
 
