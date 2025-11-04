@@ -22,12 +22,25 @@ jobs:
         run: |
           gh pr checkout ${{ github.event.issue.number }}
 
-      - name: Install Python & SWE-agent
+      - name: Install Python
         uses: actions/setup-python@v5
-        with: { python-version: '3.11' }
-      - run: |
-          python -m pip install -U pip
-          pip install "swe-agent"
+        with: 
+          python-version: '3.11'
+      
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git
+      
+      - name: Install SWE-agent
+        run: |
+          python -m pip install --upgrade pip
+          # 需要克隆完整仓库以包含 config 目录
+          git clone --depth 1 https://github.com/SWE-agent/SWE-agent.git /tmp/swe-agent
+          cd /tmp/swe-agent
+          pip install -e .
+          # 确保 config 目录存在
+          ls -la config/ || echo "Warning: config directory not found"
 
       - name: Extract reviewer instructions
         id: instr
@@ -37,18 +50,16 @@ jobs:
           echo "path=/tmp/revise.md" >> $GITHUB_OUTPUT
 
       - name: Run SWE-agent locally to produce a patch
+        env:
+          GITHUB_TOKEN: ${{ secrets.SWE_AGENT_GH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
+          cd /tmp/swe-agent
           sweagent run \
             --config config/default.yaml \
             --config ${{ github.workspace }}/.github/swe-agent.yaml \
             --env.repo.type=local \
             --env.repo.path="${{ github.workspace }}" \
             --problem_statement.github_url="https://github.com/${{ github.repository }}/issues/${{ github.event.issue.number }}"
-          PATCH_FILE_PATH=$(ls -1 /tmp/swe-agent/trajectories/*/*.patch | tail -n1)
-          echo "PATCH_FILE_PATH=$PATCH_FILE_PATH"
-          git config user.name "swe-agent-bot"
-          git config user.email "bot@example.com"
-          git apply --3way "$PATCH_FILE_PATH"
-          git add -A
-          git commit -m "SWE-agent revise: ${{ github.sha }} (via /swe revise)"
-          git push
+
