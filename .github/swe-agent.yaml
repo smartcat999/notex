@@ -1,44 +1,18 @@
 # SWE-agent Configuration Override
 # Minimal configuration - only override model settings
-# All other settings use defaults from config/default.yaml
+# SWE-agent has strict schema validation, so only basic model config is allowed
 
 agent:
   model:
     name: "anthropic/claude-sonnet-4-5"
     api_base: "https://claude.nnppn.cn/api"
-    # 限制 token 使用，避免过度生成
-    max_tokens: 4096
-  # 成本和迭代限制
-  cost_limits:
-    per_instance_usd: 2.00
-  # 任务限制 - 限制最大迭代次数，避免过度探索
+    # max_tokens: 4096
   task:
     max_iterations: 30
 
-# 工具配置 - 限制可用工具，只启用必要的工具
-tools:
-  enabled:
-    - file_editor
-    - search_replace
-    - grep
-    - read_file
-  # 禁用 shell 和 search，避免过度探索
-  disabled:
-    - shell
-    - search
-
-# 输出限制
-output:
-  # 限制日志输出
-  verbose: false
-  save_trajectory: true
-
-actions:
-  open_pr: true
-  pr_config:
-    base: main
-    branch_prefix: swe-agent/
-
+# Note: Other settings like cost_limits, max_iterations, tools, etc.
+# should be set via command line arguments or use default config
+# Example: --agent.model.per_instance_cost_limit=2.00
 env:
   deployment:
     python_standalone_dir: ""
