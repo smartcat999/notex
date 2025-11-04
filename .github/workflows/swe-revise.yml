@@ -49,6 +49,11 @@ jobs:
           echo "$c" | sed 's#^/swe revise[[:space:]]*##' > /tmp/revise.md
           echo "path=/tmp/revise.md" >> $GITHUB_OUTPUT
 
+      - name: Configure git identity for commits
+        run: |
+          git config user.name "swe-agent-bot"
+          git config user.email "swe-agent-bot@users.noreply.github.com"
+      
       - name: Run SWE-agent locally to produce a patch
         env:
           GITHUB_TOKEN: ${{ secrets.SWE_AGENT_GH_TOKEN }}
@@ -61,5 +66,56 @@ jobs:
             --config ${{ github.workspace }}/.github/swe-agent.yaml \
             --env.repo.type=local \
             --env.repo.path="${{ github.workspace }}" \
-            --problem_statement.github_url="https://github.com/${{ github.repository }}/issues/${{ github.event.issue.number }}"
+            --problem_statement.path="/tmp/revise.md"
+      
+      - name: Apply patch and update PR
+        env:
+          GITHUB_TOKEN: ${{ secrets.SWE_AGENT_GH_TOKEN }}
+        run: |
+          cd "${{ github.workspace }}"
+          
+          # 查找生成的 patch 文件
+          PATCH_FILE_PATH=$(find /tmp/swe-agent/trajectories -name "*.patch" -type f | tail -n1)
+          
+          if [ -z "$PATCH_FILE_PATH" ]; then
+            echo "No patch file found. SWE-agent may not have made changes."
+            exit 0
+          fi
+          
+          echo "Found patch file: $PATCH_FILE_PATH"
+          echo "Patch content:"
+          cat "$PATCH_FILE_PATH" || true
+          
+          # 应用 patch
+          git apply --3way "$PATCH_FILE_PATH" || {
+            echo "Patch apply failed, trying without 3way..."
+            git apply "$PATCH_FILE_PATH" || {
+              echo "Failed to apply patch. Continuing..."
+              exit 0
+            }
+          }
+          
+          # 检查是否有更改
+          if git diff --staged --quiet && git diff --quiet; then
+            echo "No changes to commit after applying patch."
+            exit 0
+          fi
+          
+          # 添加所有更改
+          git add -A
+          
+          # 提交更改
+          COMMIT_MSG="SWE-agent revise: $(echo '${{ github.event.comment.body }}' | sed 's#^/swe revise[[:space:]]*##' | head -c 100)"
+          git commit -m "$COMMIT_MSG" || {
+            echo "Commit failed. May be no changes or already committed."
+            exit 0
+          }
+          
+          # 推送到 PR 分支
+          git push || {
+            echo "Push failed. Check branch permissions."
+            exit 1
+          }
+          
+          echo "✅ Successfully updated PR with SWE-agent changes"
 
