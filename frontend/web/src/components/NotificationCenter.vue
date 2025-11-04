@@ -187,6 +187,42 @@ onMounted(() => {
     align-items: center;
     justify-content: space-between;
     gap: 12px;
+
+    :deep(.el-radio-group) {
+      .el-radio-button {
+        &:first-child {
+          .el-radio-button__inner {
+            border-radius: 4px 0 0 4px;
+          }
+        }
+        
+        &:last-child {
+          .el-radio-button__inner {
+            border-radius: 0 4px 4px 0;
+          }
+        }
+        
+        .el-radio-button__inner {
+          border-color: var(--el-border-color);
+          color: var(--el-text-color-regular);
+          transition: all 0.2s ease;
+          
+          &:hover {
+            color: var(--el-color-primary);
+            border-color: var(--el-color-primary-light-7);
+          }
+        }
+        
+        &.is-active {
+          .el-radio-button__inner {
+            background: var(--el-color-primary);
+            color: white;
+            border-color: var(--el-color-primary);
+            box-shadow: none;
+          }
+        }
+      }
+    }
   }
 }
 
