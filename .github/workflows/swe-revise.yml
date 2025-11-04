@@ -1,0 +1,54 @@
+name: SWE revise on PR comment
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  revise:
+    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/swe revise') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout base repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout the PR branch
+        env: 
+            GITHUB_TOKEN: ${{ secrets.SWE_AGENT_GH_TOKEN }}
+        run: |
+          gh pr checkout ${{ github.event.issue.number }}
+
+      - name: Install Python & SWE-agent
+        uses: actions/setup-python@v5
+        with: { python-version: '3.11' }
+      - run: |
+          python -m pip install -U pip
+          pip install "swe-agent"
+
+      - name: Extract reviewer instructions
+        id: instr
+        run: |
+          c='${{ github.event.comment.body }}'
+          echo "$c" | sed 's#^/swe revise[[:space:]]*##' > /tmp/revise.md
+          echo "path=/tmp/revise.md" >> $GITHUB_OUTPUT
+
+      - name: Run SWE-agent locally to produce a patch
+        run: |
+          sweagent run \
+            --config config/default.yaml \
+            --config ${{ github.workspace }}/.github/swe-agent.yaml \
+            --env.repo.type=local \
+            --env.repo.path="${{ github.workspace }}" \
+            --problem_statement.github_url="https://github.com/${{ github.repository }}/issues/${{ github.event.issue.number }}"
+          PATCH_FILE_PATH=$(ls -1 /tmp/swe-agent/trajectories/*/*.patch | tail -n1)
+          echo "PATCH_FILE_PATH=$PATCH_FILE_PATH"
+          git config user.name "swe-agent-bot"
+          git config user.email "bot@example.com"
+          git apply --3way "$PATCH_FILE_PATH"
+          git add -A
+          git commit -m "SWE-agent revise: ${{ github.sha }} (via /swe revise)"
+          git push
