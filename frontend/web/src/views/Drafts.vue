@@ -25,22 +25,31 @@
               <a :href="draft.url" target="_blank">{{ draft.title || '无标题草稿' }}</a>
             </h2>
             <div class="draft-actions">
-              <el-button type="info" @click="handlePreview(draft)">
-                <el-icon><View /></el-icon>
-                预览
-              </el-button>
-              <el-button type="primary" @click="handleEdit(draft)">
-                <el-icon><Edit /></el-icon>
-                编辑
-              </el-button>
-              <el-button type="success" @click="handlePublish(draft)">
-                <el-icon><Upload /></el-icon>
-                发布
-              </el-button>
-              <el-button type="danger" @click="handleDelete(draft)">
-                <el-icon><Delete /></el-icon>
-                删除
-              </el-button>
+              <el-dropdown trigger="click" placement="bottom-end">
+                <el-button circle class="more-button">
+                  <el-icon><MoreFilled /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="handlePreview(draft)">
+                      <el-icon><View /></el-icon>
+                      预览
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="handleEdit(draft)">
+                      <el-icon><Edit /></el-icon>
+                      编辑
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="handlePublish(draft)">
+                      <el-icon><Upload /></el-icon>
+                      发布
+                    </el-dropdown-item>
+                    <el-dropdown-item divided @click="handleDelete(draft)">
+                      <el-icon><Delete /></el-icon>
+                      删除
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
           </div>
           <div class="draft-meta">
@@ -137,7 +146,7 @@
 import { ref, onMounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, View, Calendar, ChatDotRound, Edit, Upload, Delete } from '@element-plus/icons-vue'
+import { Search, View, Calendar, ChatDotRound, Edit, Upload, Delete, MoreFilled } from '@element-plus/icons-vue'
 import { getDrafts, deleteDraft, publishDraft, getDraft } from '@/api/drafts'
 import { formatDate } from '@/utils/date'
 import { useUserStore } from '@/stores/user'
@@ -491,82 +500,69 @@ onMounted(() => {
           gap: 10px;
           flex-wrap: wrap;
 
-          :deep(.el-button) {
-            padding: 10px 18px;
-            border: none;
+          .more-button {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            border: 1px solid rgba(43, 88, 118, 0.15);
+            background: rgba(255, 255, 255, 0.98);
+            color: #2B5876;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-weight: 500;
-            font-size: 0.9em;
-            border-radius: 8px;
-            display: inline-flex;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+            &:hover {
+              background: rgba(43, 88, 118, 0.08);
+              border-color: rgba(43, 88, 118, 0.25);
+              transform: translateY(-2px);
+              box-shadow: 0 4px 12px rgba(43, 88, 118, 0.15);
+            }
+
+            &:active {
+              transform: translateY(0);
+            }
+
+            .el-icon {
+              font-size: 1.2em;
+            }
+          }
+        }
+
+        :deep(.el-dropdown-menu) {
+          border-radius: 8px;
+          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+          border: 1px solid rgba(43, 88, 118, 0.08);
+          padding: 8px 0;
+
+          .el-dropdown-menu__item {
+            padding: 10px 20px;
+            display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 10px;
+            transition: all 0.2s ease;
+            font-size: 0.9em;
 
             .el-icon {
               font-size: 1.1em;
+              color: #2B5876;
             }
 
-            &.el-button--info {
-              background: linear-gradient(135deg, #6c757d, #5a6268);
-              color: white;
-              box-shadow: 0 2px 8px rgba(108, 117, 125, 0.15);
-
-              &:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(108, 117, 125, 0.25);
-                background: linear-gradient(135deg, #5a6268, #495057);
-              }
-
-              &:active {
-                transform: translateY(0);
-              }
+            &:hover {
+              background: rgba(43, 88, 118, 0.06);
+              color: #2B5876;
             }
 
-            &.el-button--primary {
-              background: linear-gradient(135deg, #2B5876, #4E4376);
-              color: white;
-              box-shadow: 0 2px 8px rgba(43, 88, 118, 0.15);
+            &.is-divided {
+              border-top: 1px solid rgba(0, 0, 0, 0.06);
+              margin-top: 4px;
+              padding-top: 14px;
 
               &:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(43, 88, 118, 0.25);
-                background: linear-gradient(135deg, #1a365d, #3d2f5f);
-              }
+                background: rgba(239, 68, 68, 0.06);
+                color: #ef4444;
 
-              &:active {
-                transform: translateY(0);
-              }
-            }
-
-            &.el-button--success {
-              background: linear-gradient(135deg, #10b981, #059669);
-              color: white;
-              box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
-
-              &:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
-                background: linear-gradient(135deg, #059669, #047857);
-              }
-
-              &:active {
-                transform: translateY(0);
-              }
-            }
-
-            &.el-button--danger {
-              background: linear-gradient(135deg, #ef4444, #dc2626);
-              color: white;
-              box-shadow: 0 2px 8px rgba(239, 68, 68, 0.15);
-
-              &:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
-                background: linear-gradient(135deg, #dc2626, #b91c1c);
-              }
-
-              &:active {
-                transform: translateY(0);
+                .el-icon {
+                  color: #ef4444;
+                }
               }
             }
           }
@@ -706,14 +702,7 @@ onMounted(() => {
 
           .draft-actions {
             width: 100%;
-            justify-content: flex-start;
-            
-            :deep(.el-button) {
-              flex: 1;
-              min-width: 0;
-              font-size: 0.85em;
-              padding: 8px 12px;
-            }
+            justify-content: flex-end;
           }
         }
       }
